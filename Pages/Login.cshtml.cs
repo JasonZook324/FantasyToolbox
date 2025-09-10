@@ -87,6 +87,8 @@ public class LoginModel : PageModel
         await _dbContext.SaveChangesAsync();
 
         HttpContext.Session.SetString("UserEmail", user.Email);
+        HttpContext.Session.SetString("FirstName", user.FirstName ?? "");
+        HttpContext.Session.SetString("LastName", user.LastName ?? "");
 
         var claims = new[] { new Claim(ClaimTypes.Name, user.Email) };
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);

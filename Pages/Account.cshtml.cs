@@ -164,6 +164,10 @@ public class AccountModel : PageModel
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
         }
 
+        // After updating user and before returning Page()
+        HttpContext.Session.SetString("FirstName", user.FirstName ?? "");
+        HttpContext.Session.SetString("LastName", user.LastName ?? "");
+
         Message = "Account updated successfully.";
         await OnGetAsync();
         return Page();

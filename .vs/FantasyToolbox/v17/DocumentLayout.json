@@ -7,6 +7,18 @@
       "RelativeMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|solutionrelative:pages\\account.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|c:\\users\\64515c\\source\\repos\\learning\\fantasytoolbox\\pages\\login.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|solutionrelative:pages\\login.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|c:\\users\\64515c\\source\\repos\\learning\\fantasytoolbox\\pages\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|solutionrelative:pages\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|c:\\users\\64515c\\source\\repos\\learning\\fantasytoolbox\\pages\\account.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|solutionrelative:pages\\account.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|c:\\users\\64515c\\source\\repos\\learning\\fantasytoolbox\\pages\\apppagemodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|solutionrelative:pages\\apppagemodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -17,10 +29,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|c:\\users\\64515c\\source\\repos\\learning\\fantasytoolbox\\pages\\espnsessionhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|solutionrelative:pages\\espnsessionhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|c:\\users\\64515c\\source\\repos\\learning\\fantasytoolbox\\pages\\login.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|solutionrelative:pages\\login.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|c:\\users\\64515c\\source\\repos\\learning\\fantasytoolbox\\data\\applicationdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -51,14 +59,6 @@
       "RelativeMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|solutionrelative:data\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|c:\\users\\64515c\\source\\repos\\learning\\fantasytoolbox\\pages\\account.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|solutionrelative:pages\\account.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|c:\\users\\64515c\\source\\repos\\learning\\fantasytoolbox\\pages\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|solutionrelative:pages\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|c:\\users\\64515c\\source\\repos\\learning\\fantasytoolbox\\pages\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|solutionrelative:pages\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
@@ -81,7 +81,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 8,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -89,15 +89,64 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "Login.cshtml.cs",
-              "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Login.cshtml.cs",
-              "RelativeDocumentMoniker": "Pages\\Login.cshtml.cs",
-              "ToolTip": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Login.cshtml.cs",
-              "RelativeToolTip": "Pages\\Login.cshtml.cs",
-              "ViewState": "AgIAAC8AAAAAAAAAAAAmwD0AAAAkAAAAAAAAAA==",
+              "DocumentIndex": 9,
+              "Title": "Dashboard.cshtml.cs",
+              "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Dashboard.cshtml.cs",
+              "RelativeDocumentMoniker": "Pages\\Dashboard.cshtml.cs",
+              "ToolTip": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Dashboard.cshtml.cs",
+              "RelativeToolTip": "Pages\\Dashboard.cshtml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-10T19:05:22.026Z",
+              "WhenOpened": "2025-09-10T16:03:26.694Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Program.cs",
+              "RelativeDocumentMoniker": "Program.cs",
+              "ToolTip": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Program.cs",
+              "RelativeToolTip": "Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-10T19:19:51.815Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Account.cshtml.cs",
+              "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Account.cshtml.cs",
+              "RelativeDocumentMoniker": "Pages\\Account.cshtml.cs",
+              "ToolTip": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Account.cshtml.cs",
+              "RelativeToolTip": "Pages\\Account.cshtml.cs",
+              "ViewState": "AgIAAJgAAAAAAAAAAAASwK0AAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-10T19:58:40.715Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "EspnSessionHelper.cs",
+              "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\EspnSessionHelper.cs",
+              "RelativeDocumentMoniker": "Pages\\EspnSessionHelper.cs",
+              "ToolTip": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\EspnSessionHelper.cs",
+              "RelativeToolTip": "Pages\\EspnSessionHelper.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-10T21:44:27.344Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Account.cshtml",
+              "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Account.cshtml",
+              "RelativeDocumentMoniker": "Pages\\Account.cshtml",
+              "ToolTip": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Account.cshtml",
+              "RelativeToolTip": "Pages\\Account.cshtml",
+              "ViewState": "AgIAACUAAAAAAAAAAAASwDMAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-10T19:58:48.888Z",
               "EditorCaption": ""
             },
             {
@@ -115,19 +164,19 @@
             {
               "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "ConnectESPN.cshtml.cs",
-              "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\ConnectESPN.cshtml.cs",
-              "RelativeDocumentMoniker": "Pages\\ConnectESPN.cshtml.cs",
-              "ToolTip": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\ConnectESPN.cshtml.cs",
-              "RelativeToolTip": "Pages\\ConnectESPN.cshtml.cs",
-              "ViewState": "AgIAAIAAAAAAAAAAAAAqwI4AAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-10T16:15:49.718Z",
+              "Title": "_Layout.cshtml",
+              "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Shared\\_Layout.cshtml",
+              "RelativeDocumentMoniker": "Pages\\Shared\\_Layout.cshtml",
+              "ToolTip": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Shared\\_Layout.cshtml",
+              "RelativeToolTip": "Pages\\Shared\\_Layout.cshtml",
+              "ViewState": "AgIAAEsAAAAAAAAAAAAMwEMAAAByAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-09T19:41:58.912Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 4,
               "Title": "AppPageModel.cs",
               "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\AppPageModel.cs",
               "RelativeDocumentMoniker": "Pages\\AppPageModel.cs",
@@ -135,12 +184,24 @@
               "RelativeToolTip": "Pages\\AppPageModel.cs",
               "ViewState": "AgIAACYAAAAAAAAAAAASwDkAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-10T14:41:40.253Z",
+              "WhenOpened": "2025-09-10T14:41:40.253Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Login.cshtml.cs",
+              "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Login.cshtml.cs",
+              "RelativeDocumentMoniker": "Pages\\Login.cshtml.cs",
+              "ToolTip": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Login.cshtml.cs",
+              "RelativeToolTip": "Pages\\Login.cshtml.cs",
+              "ViewState": "AgIAAEsAAAAAAAAAAAASwD0AAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-10T19:05:22.026Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 7,
               "Title": "ApplicationDbContext.cs",
               "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Data\\ApplicationDbContext.cs",
               "RelativeDocumentMoniker": "Data\\ApplicationDbContext.cs",
@@ -148,60 +209,19 @@
               "RelativeToolTip": "Data\\ApplicationDbContext.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAhAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-09T21:25:37.101Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-09T21:25:37.101Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "Dashboard.cshtml.cs",
-              "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Dashboard.cshtml.cs",
-              "RelativeDocumentMoniker": "Pages\\Dashboard.cshtml.cs",
-              "ToolTip": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Dashboard.cshtml.cs",
-              "RelativeToolTip": "Pages\\Dashboard.cshtml.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAANAAAAAAAAAA==",
+              "DocumentIndex": 5,
+              "Title": "ConnectESPN.cshtml.cs",
+              "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\ConnectESPN.cshtml.cs",
+              "RelativeDocumentMoniker": "Pages\\ConnectESPN.cshtml.cs",
+              "ToolTip": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\ConnectESPN.cshtml.cs",
+              "RelativeToolTip": "Pages\\ConnectESPN.cshtml.cs",
+              "ViewState": "AgIAAIAAAAAAAAAAAAAqwI4AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-10T16:03:26.694Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Program.cs",
-              "RelativeDocumentMoniker": "Program.cs",
-              "ToolTip": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Program.cs",
-              "RelativeToolTip": "Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-10T19:19:51.815Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Account.cshtml.cs",
-              "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Account.cshtml.cs",
-              "RelativeDocumentMoniker": "Pages\\Account.cshtml.cs",
-              "ToolTip": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Account.cshtml.cs",
-              "RelativeToolTip": "Pages\\Account.cshtml.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-10T19:58:40.715Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "EspnSessionHelper.cs",
-              "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\EspnSessionHelper.cs",
-              "RelativeDocumentMoniker": "Pages\\EspnSessionHelper.cs",
-              "ToolTip": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\EspnSessionHelper.cs",
-              "RelativeToolTip": "Pages\\EspnSessionHelper.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-10T21:44:27.344Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-10T16:15:49.718Z"
             },
             {
               "$type": "Document",
@@ -217,7 +237,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 10,
               "Title": "User.cs",
               "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Models\\User.cs",
               "RelativeDocumentMoniker": "Models\\User.cs",
@@ -225,12 +245,11 @@
               "RelativeToolTip": "Models\\User.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-10T21:22:26.138Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-10T21:22:26.138Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 12,
               "Title": "Register.cshtml.cs",
               "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Register.cshtml.cs",
               "RelativeDocumentMoniker": "Pages\\Register.cshtml.cs",
@@ -238,21 +257,19 @@
               "RelativeToolTip": "Pages\\Register.cshtml.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-10T20:58:47.992Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-10T20:58:47.992Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "FantasyToolbox",
+              "DocumentIndex": 11,
+              "Title": "FantasyToolbox.csproj",
               "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\FantasyToolbox.csproj",
               "RelativeDocumentMoniker": "FantasyToolbox.csproj",
               "ToolTip": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\FantasyToolbox.csproj",
               "RelativeToolTip": "FantasyToolbox.csproj",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2025-09-10T21:10:37.302Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-10T21:10:37.302Z"
             },
             {
               "$type": "Document",
@@ -269,18 +286,6 @@
             {
               "$type": "Document",
               "DocumentIndex": 13,
-              "Title": "_Layout.cshtml",
-              "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Shared\\_Layout.cshtml",
-              "RelativeDocumentMoniker": "Pages\\Shared\\_Layout.cshtml",
-              "ToolTip": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Shared\\_Layout.cshtml",
-              "RelativeToolTip": "Pages\\Shared\\_Layout.cshtml",
-              "ViewState": "AgIAADIAAAAAAAAAAAAswE8AAAAyAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-09-09T19:41:58.912Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 11,
               "Title": "User.cs",
               "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Data\\User.cs",
               "RelativeDocumentMoniker": "Data\\User.cs",
@@ -288,20 +293,7 @@
               "RelativeToolTip": "Data\\User.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABwAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-10T20:58:02.141Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 12,
-              "Title": "Account.cshtml",
-              "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Account.cshtml",
-              "RelativeDocumentMoniker": "Pages\\Account.cshtml",
-              "ToolTip": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Account.cshtml",
-              "RelativeToolTip": "Pages\\Account.cshtml",
-              "ViewState": "AgIAABwAAAAAAAAAAAASwCoAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-09-10T19:58:48.888Z"
+              "WhenOpened": "2025-09-10T20:58:02.141Z"
             },
             {
               "$type": "Document",

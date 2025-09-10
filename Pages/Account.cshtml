@@ -4,47 +4,64 @@
     ViewData["Title"] = "Account";
 }
 
-<div class="form-container">
-    <div class="form-card">
-        <div class="form-title">Account Settings</div>
-        @if (!string.IsNullOrEmpty(Model.Message))
-        {
-            <div class="form-message-error">@Model.Message</div>
-        }
-        <form method="post" class="form">
-            <label asp-for="Input.NewEmail"></label>
-            <input asp-for="Input.NewEmail" type="email" autocomplete="email" placeholder="New Email" />
-            <span asp-validation-for="Input.NewEmail" class="text-danger"></span>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0">Account Settings</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        <div class="mb-3">
+                            <label asp-for="Input.NewEmail" class="form-label"></label>
+                            <input asp-for="Input.NewEmail" class="form-control" />
+                            <span asp-validation-for="Input.NewEmail" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Input.CurrentPassword" class="form-label"></label>
+                            <input asp-for="Input.CurrentPassword" class="form-control" type="password" />
+                            <span asp-validation-for="Input.CurrentPassword" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Input.NewPassword" class="form-label"></label>
+                            <input asp-for="Input.NewPassword" class="form-control" type="password" />
+                            <span asp-validation-for="Input.NewPassword" class="text-danger"></span>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100 mb-2">Update Account</button>
+                        @if (!string.IsNullOrEmpty(Model.Message))
+                        {
+                            <div class="alert alert-info mt-2">@Model.Message</div>
+                        }
+                    </form>
+                </div>
+            </div>
 
-            <label asp-for="Input.CurrentPassword"></label>
-            <input asp-for="Input.CurrentPassword" type="password" autocomplete="current-password" placeholder="Current Password" />
-            <span asp-validation-for="Input.CurrentPassword" class="text-danger"></span>
-
-            <label asp-for="Input.NewPassword"></label>
-            <input asp-for="Input.NewPassword" type="password" autocomplete="new-password" placeholder="New Password (optional)" />
-            <span asp-validation-for="Input.NewPassword" class="text-danger"></span>
-
-            <button type="submit">Update Account</button>
-        </form>
-
-        <hr style="margin:2rem 0 1rem 0;" />
-
-        <div class="form-title" style="font-size:1.2rem;">Select Your Team</div>
-        @if (!string.IsNullOrEmpty(Model.TeamMessage))
-        {
-            <div class="form-message-error">@Model.TeamMessage</div>
-        }
-        <form method="post" asp-page-handler="SelectTeam" class="form">
-            <label for="teamSelect">Team</label>
-            <select id="teamSelect" asp-for="SelectedTeamId">
-                <option value="">-- Select a team --</option>
-                @foreach (var team in Model.Teams)
-                {
-                    <option value="@team.Id" selected="@(Model.SelectedTeamId == team.Id ? "selected" : null)">@team.Name</option>
-                }
-            </select>
-            <button type="submit">Save Team</button>
-        </form>
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h3 class="mb-0">Select Your Team</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" asp-page-handler="SelectTeam">
+                        <div class="mb-3">
+                            <label for="SelectedTeamId" class="form-label">Team</label>
+                            <select asp-for="SelectedTeamId" class="form-select">
+                                <option value="">-- Select Team --</option>
+                                @foreach (var team in Model.Teams)
+                                {
+                                    <option value="@team.Id" selected="@(Model.SelectedTeamId == team.Id ? "selected" : null)">@team.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Save Team</button>
+                        @if (!string.IsNullOrEmpty(Model.TeamMessage))
+                        {
+                            <div class="alert alert-warning mt-2">@Model.TeamMessage</div>
+                        }
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
