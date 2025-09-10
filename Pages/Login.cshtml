@@ -4,6 +4,109 @@
     ViewData["Title"] = "Login";
 }
 
+<style>
+    .form-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 60vh;
+    }
+    .form-card {
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+        padding: 2.5rem 2rem;
+        width: 100%;
+        max-width: 400px;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem; /* Reduced from 2rem */
+        align-items: center;
+        box-sizing: border-box;
+    }
+    .form-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 0.5rem;
+        text-align: center;
+    }
+    .form-message-error {
+        color: #e53e3e;
+        background: #fff5f5;
+        border-radius: 6px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        text-align: center;
+        font-size: 1.05rem;
+    }
+    .form {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem; /* Reduced from 1.25rem */
+        box-sizing: border-box;
+    }
+    .form label {
+        font-weight: 500;
+        color: #2d3748;
+        margin-bottom: 0.15rem; /* Reduced from 0.25rem */
+        font-size: 1rem;
+    }
+    .form input[type="email"],
+    .form input[type="password"] {
+        border: 1px solid #cbd5e0;
+        border-radius: 6px;
+        padding: 0.6rem 0.9rem; /* Reduced padding */
+        font-size: 1rem;
+        background: #f7fafc;
+        transition: border-color 0.2s;
+        box-sizing: border-box;
+        width: 100%;
+    }
+    .form input[type="email"]:focus,
+    .form input[type="password"]:focus {
+        border-color: #3182ce;
+        outline: none;
+        background: #fff;
+    }
+    .form-group-remember {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-bottom: 0.2rem; /* Reduced from 0.5rem */
+        margin-top: 0.2rem;    /* Reduced from 0.5rem */
+    }
+    .form input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #3182ce;
+        margin: 0;
+    }
+    .form button[type="submit"] {
+        background: #3182ce;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: 0.6rem 1.2rem; /* Reduced padding */
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        margin-top: 0.3rem; /* Reduced from 0.5rem */
+        width: 100%;
+    }
+    .form button[type="submit"]:hover {
+        background: #2563eb;
+    }
+    .form-link {
+        margin-top: 1rem; /* Reduced from 1.5rem */
+        text-align: center;
+    }
+</style>
+
 <div class="form-container">
     <div class="form-card">
         <div class="form-title">Sign In</div>
@@ -19,6 +122,11 @@
             <label asp-for="Input.Password"></label>
             <input asp-for="Input.Password" type="password" autocomplete="current-password" placeholder="Password" />
             <span asp-validation-for="Input.Password" class="text-danger"></span>
+
+            <div class="form-group-remember">
+                <input asp-for="RememberMe" type="checkbox" id="rememberMe" />
+                <label asp-for="RememberMe" for="rememberMe" style="margin-bottom:0;">Remember Me</label>
+            </div>
 
             <button type="submit" name="Action" value="login">Login</button>
         </form>
