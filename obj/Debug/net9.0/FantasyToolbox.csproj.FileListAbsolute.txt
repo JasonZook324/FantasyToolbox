@@ -215,3 +215,4 @@ C:\Users\64515C\source\repos\LEARNING\FantasyToolbox\obj\Debug\net9.0\compressed
 C:\Users\64515C\source\repos\LEARNING\FantasyToolbox\obj\Debug\net9.0\compressed\b9lhb08218-5pze98is44.gz
 C:\Users\64515C\source\repos\LEARNING\FantasyToolbox\obj\Debug\net9.0\compressed\yfc7ypekbg-mlv21k5csn.gz
 C:\Users\64515C\source\repos\LEARNING\FantasyToolbox\obj\Debug\net9.0\compressed\woej4o8dwe-cjzb17q77l.gz
+C:\Users\64515C\source\repos\LEARNING\FantasyToolbox\obj\Debug\net9.0\FantasyToolbox.sourcelink.json

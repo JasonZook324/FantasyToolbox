@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Npgsql;
 
@@ -18,6 +21,7 @@ public class ConnectESPNModel : PageModel
 
     public string SuccessMessage { get; set; }
     public string ErrorMessage { get; set; }
+    public string LeagueName { get; set; }
 
     public class InputModel
     {
@@ -52,7 +56,6 @@ public class ConnectESPNModel : PageModel
         using var conn = new NpgsqlConnection(connString);
         conn.Open();
 
-        // Get user id from users table
         int userId;
         using (var getUserCmd = new NpgsqlCommand("SELECT userid FROM users WHERE email = @email", conn))
         {
@@ -68,7 +71,6 @@ public class ConnectESPNModel : PageModel
 
         Input = new InputModel();
 
-        // Get ESPN Auth cookies
         using (var getAuthCmd = new NpgsqlCommand(
             "SELECT swid, espn_s2 FROM espn_auth WHERE userid = @userid", conn))
         {
@@ -82,7 +84,6 @@ public class ConnectESPNModel : PageModel
             reader.Close();
         }
 
-        // Get League Data
         using (var getLeagueCmd = new NpgsqlCommand(
             "SELECT leagueid, league_year FROM f_league_data WHERE userid = @userid", conn))
         {
@@ -116,7 +117,6 @@ public class ConnectESPNModel : PageModel
         using var conn = new NpgsqlConnection(connString);
         await conn.OpenAsync();
 
-        // Get user id from users table
         int userId;
         using (var getUserCmd = new NpgsqlCommand("SELECT userid FROM users WHERE email = @email", conn))
         {
@@ -130,7 +130,6 @@ public class ConnectESPNModel : PageModel
             userId = (int)result;
         }
 
-        // Save ESPN Auth cookies
         using (var insertAuthCmd = new NpgsqlCommand(
             "INSERT INTO espn_auth (userid, swid, espn_s2) VALUES (@userid, @swid, @espn_s2) " +
             "ON CONFLICT (userid) DO UPDATE SET swid = @swid, espn_s2 = @espn_s2", conn))
@@ -141,7 +140,6 @@ public class ConnectESPNModel : PageModel
             await insertAuthCmd.ExecuteNonQueryAsync();
         }
 
-        // Save League Data
         using (var insertLeagueCmd = new NpgsqlCommand(
             "INSERT INTO f_league_data (userid, leagueid, league_year) VALUES (@userid, @leagueid, @league_year) " +
             "ON CONFLICT (userid) DO UPDATE SET leagueid = @leagueid, league_year = @league_year", conn))
@@ -153,9 +151,55 @@ public class ConnectESPNModel : PageModel
         }
 
         EspnSessionHelper.UpdateEspnConnectedSession(HttpContext, _configuration);
-        EspnSessionHelper.SetEspnBannerIfNeeded(HttpContext, ViewData);
 
-        SuccessMessage = "ESPN account connected successfully!";
+        // ESPN API call for private league (requires cookies for authentication)
+        try
+        {
+            using var handler = new HttpClientHandler();
+            handler.UseCookies = false;
+
+            using var httpClient = new HttpClient(handler);
+            var apiUrl = $"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{Input.SeasonYear}/segments/0/leagues/{Input.LeagueId}?view=mSettings";
+            httpClient.DefaultRequestHeaders.Add("Cookie", $"SWID={Input.SWID.Trim()}; espn_s2={Input.ESPN_S2.Trim()}");
+            
+            var response = await httpClient.GetAsync(apiUrl);
+            var json = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                ErrorMessage = $"Failed to connect to ESPN API. Status: {(int)response.StatusCode} {response.ReasonPhrase}. Response: {json.Substring(0, Math.Min(json.Length, 300))}";
+                return Page();
+            }
+
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+
+                // Extract league name from settings.name
+                if (doc.RootElement.TryGetProperty("settings", out var settingsProp) &&
+                    settingsProp.TryGetProperty("name", out var leagueNameProp))
+                {
+                    LeagueName = leagueNameProp.GetString();
+                    SuccessMessage = $"ESPN account connected successfully! League Name: {LeagueName}";
+                }
+                else
+                {
+                    ErrorMessage = $"Could not retrieve league name from ESPN API. Raw response: {json.Substring(0, Math.Min(json.Length, 500))}\nFull response:\n{json}";
+                    return Page();
+                }
+            }
+            catch (JsonException)
+            {
+                ErrorMessage = $"ESPN API did not return JSON. Raw response: {json.Substring(0, Math.Min(json.Length, 500))}\nFull response:\n{json}";
+                return Page();
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"An error occurred while connecting to the ESPN API: {ex.Message}";
+            return Page();
+        }
+
         return Page();
     }
 }
