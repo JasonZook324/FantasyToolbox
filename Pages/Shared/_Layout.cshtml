@@ -34,10 +34,18 @@
                 <li>
                     <a href="/">Home</a>
                 </li>
+                @{
+                    var userEmail = HttpContextAccessor.HttpContext?.Session.GetString("UserEmail");
+                    if (!string.IsNullOrEmpty(userEmail))
+                    {
+                        <li>
+                            <a href="/Account">Account</a>
+                        </li>
+                    }
+                }
             </ul>
             <ul class="right-nav">
                 @{
-                    var userEmail = HttpContextAccessor.HttpContext?.Session.GetString("UserEmail");
                     var espnConnected = HttpContextAccessor.HttpContext?.Session.GetString("EspnConnected");
                     if (string.IsNullOrEmpty(userEmail))
                     { // Not logged in
