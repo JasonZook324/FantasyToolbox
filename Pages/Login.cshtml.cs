@@ -2,31 +2,31 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
-using Npgsql;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 
 public class LoginModel : PageModel
 {
-    private readonly IConfiguration _configuration;
+    private readonly ApplicationDbContext _dbContext;
 
-    public LoginModel(IConfiguration configuration)
+    public LoginModel(ApplicationDbContext dbContext)
     {
-        _configuration = configuration;
+        _dbContext = dbContext;
     }
 
     [BindProperty]
     public InputModel Input { get; set; }
 
     [BindProperty]
-    public string Action { get; set; } // "login"
+    public string Action { get; set; }
 
     public string Message { get; set; }
 
     [BindProperty]
-    public bool RememberMe { get; set; } // Add RememberMe property
+    public bool RememberMe { get; set; }
 
     public class InputModel
     {
@@ -36,16 +36,16 @@ public class LoginModel : PageModel
 
         [Required]
         [DataType(DataType.Password)]
+        [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be at least 8 characters.")]
         public string Password { get; set; }
     }
 
     public IActionResult OnGet()
     {
         var userEmail = HttpContext.Session.GetString("UserEmail");
-        RememberMe = true; // Default to checked
+        RememberMe = true;
         if (!string.IsNullOrEmpty(userEmail))
         {
-            // Already authenticated, redirect to dashboard
             return RedirectToPage("/Dashboard");
         }
         return Page();
@@ -59,32 +59,23 @@ public class LoginModel : PageModel
             return Page();
         }
 
-        var connString = _configuration.GetConnectionString("DefaultConnection");
-        using var conn = new NpgsqlConnection(connString);
-        await conn.OpenAsync();
+        var user = await _dbContext.Users
+            .FirstOrDefaultAsync(u => u.Email == Input.Email.ToLowerInvariant().Trim());
 
-        using var loginCmd = new NpgsqlCommand(
-            "SELECT passwordhash, isactive FROM users WHERE email = @email", conn);
-        loginCmd.Parameters.AddWithValue("email", Input.Email.ToLowerInvariant().Trim());
-
-        using var reader = await loginCmd.ExecuteReaderAsync();
-        if (!await reader.ReadAsync())
+        if (user == null)
         {
             Message = "Login is invalid.";
             return Page();
         }
 
-        var dbPassword = reader["passwordhash"] as string;
-        var isActive = reader["isactive"] is bool b && b;
-
-        if (!isActive)
+        if (!user.IsActive)
         {
             Message = "Account is inactive. Please contact support.";
             return Page();
         }
 
         var hasher = new PasswordHasher<string>();
-        var result = dbPassword != null ? hasher.VerifyHashedPassword(null, dbPassword, Input.Password) : PasswordVerificationResult.Failed;
+        var result = hasher.VerifyHashedPassword(null, user.PasswordHash, Input.Password);
 
         if (result != PasswordVerificationResult.Success)
         {
@@ -92,22 +83,17 @@ public class LoginModel : PageModel
             return Page();
         }
 
-        // Update lastlogin
-        reader.Close();
-        using var updateCmd = new NpgsqlCommand("UPDATE users SET lastlogin = NOW() WHERE email = @email", conn);
-        updateCmd.Parameters.AddWithValue("email", Input.Email.ToLowerInvariant().Trim());
-        await updateCmd.ExecuteNonQueryAsync();
+        user.LastLogin = DateTime.UtcNow;
+        await _dbContext.SaveChangesAsync();
 
-        // Set session
-        HttpContext.Session.SetString("UserEmail", Input.Email.ToLowerInvariant().Trim());
+        HttpContext.Session.SetString("UserEmail", user.Email);
 
-        // Set persistent authentication cookie
-        var claims = new[] { new Claim(ClaimTypes.Name, Input.Email.ToLowerInvariant().Trim()) };
+        var claims = new[] { new Claim(ClaimTypes.Name, user.Email) };
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(identity);
         var authProperties = new AuthenticationProperties
         {
-            IsPersistent = RememberMe, // true if "Remember Me" checked
+            IsPersistent = RememberMe,
             ExpiresUtc = RememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(1)
         };
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);

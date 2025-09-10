@@ -2,16 +2,16 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
-using Npgsql;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 public class RegisterModel : PageModel
 {
-    private readonly IConfiguration _configuration;
+    private readonly ApplicationDbContext _dbContext;
 
-    public RegisterModel(IConfiguration configuration)
+    public RegisterModel(ApplicationDbContext dbContext)
     {
-        _configuration = configuration;
+        _dbContext = dbContext;
     }
 
     [BindProperty]
@@ -61,15 +61,10 @@ public class RegisterModel : PageModel
             return Page();
         }
 
-        var connString = _configuration.GetConnectionString("DefaultConnection");
-        using var conn = new NpgsqlConnection(connString);
-        await conn.OpenAsync();
+        var email = Input.Email.ToLowerInvariant().Trim();
+        var exists = await _dbContext.Users.AnyAsync(u => u.Email == email);
 
-        using var checkCmd = new NpgsqlCommand("SELECT COUNT(*) FROM users WHERE email = @email", conn);
-        checkCmd.Parameters.AddWithValue("email", Input.Email.ToLowerInvariant().Trim());
-        var exists = (long)await checkCmd.ExecuteScalarAsync();
-
-        if (exists > 0)
+        if (exists)
         {
             Message = "Account already exists or invalid input.";
             return Page();
@@ -78,13 +73,17 @@ public class RegisterModel : PageModel
         var hasher = new PasswordHasher<string>();
         var hashedPassword = hasher.HashPassword(null, Input.Password);
 
-        using var insertCmd = new NpgsqlCommand(
-            "INSERT INTO users (firstname, lastname, email, passwordhash) VALUES (@firstname, @lastname, @email, @passwordhash)", conn);
-        insertCmd.Parameters.AddWithValue("firstname", Input.FirstName.Trim());
-        insertCmd.Parameters.AddWithValue("lastname", Input.LastName.Trim());
-        insertCmd.Parameters.AddWithValue("email", Input.Email.ToLowerInvariant().Trim());
-        insertCmd.Parameters.AddWithValue("passwordhash", hashedPassword);
-        await insertCmd.ExecuteNonQueryAsync();
+        var user = new User
+        {
+            FirstName = Input.FirstName.Trim(),
+            LastName = Input.LastName.Trim(),
+            Email = email,
+            PasswordHash = hashedPassword,
+            IsActive = true
+        };
+
+        _dbContext.Users.Add(user);
+        await _dbContext.SaveChangesAsync();
 
         Message = "Account created. Please log in.";
         return RedirectToPage("/Login");

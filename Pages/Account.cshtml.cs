@@ -1,26 +1,22 @@
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Authorization;
-using System.ComponentModel.DataAnnotations;
-using System.Threading.Tasks;
-using Npgsql;
-using Microsoft.AspNetCore.Identity;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
+using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 
 [Authorize]
 public class AccountModel : PageModel
 {
-    private readonly IConfiguration _configuration;
+    private readonly ApplicationDbContext _dbContext;
 
-    public AccountModel(IConfiguration configuration)
+    public AccountModel(ApplicationDbContext dbContext)
     {
-        _configuration = configuration;
+        _dbContext = dbContext;
     }
 
     [BindProperty]
@@ -66,43 +62,20 @@ public class AccountModel : PageModel
 
         Input = new InputModel { NewEmail = userEmail };
 
-        // Get ESPN credentials and league info
-        var connString = _configuration.GetConnectionString("DefaultConnection");
-        using var conn = new NpgsqlConnection(connString);
-        await conn.OpenAsync();
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+        if (user == null)
+            return RedirectToPage("/Login");
 
-        int? selectedTeamId = null;
-        string swid = null, espn_s2 = null, leagueId = null;
-        int seasonYear = 0;
+        SelectedTeamId = user.SelectedTeamId;
 
-        using (var cmd = new NpgsqlCommand("SELECT selected_team_id FROM users WHERE email = @email", conn))
-        {
-            cmd.Parameters.AddWithValue("email", userEmail);
-            var result = await cmd.ExecuteScalarAsync();
-            if (result != null && result != DBNull.Value)
-                selectedTeamId = (int)result;
-        }
-        SelectedTeamId = selectedTeamId;
+        var auth = await _dbContext.EspnAuth.FirstOrDefaultAsync(a => a.UserId == user.UserId);
+        var leagueData = await _dbContext.FLeagueData.FirstOrDefaultAsync(l => l.UserId == user.UserId);
 
-        using (var cmd = new NpgsqlCommand(
-            @"SELECT ea.swid, ea.espn_s2, fld.leagueid, fld.league_year
-              FROM users u
-              JOIN espn_auth ea ON u.userid = ea.userid
-              JOIN f_league_data fld ON u.userid = fld.userid
-              WHERE u.email = @email", conn))
-        {
-            cmd.Parameters.AddWithValue("email", userEmail);
-            using var reader = await cmd.ExecuteReaderAsync();
-            if (await reader.ReadAsync())
-            {
-                swid = reader["swid"]?.ToString();
-                espn_s2 = reader["espn_s2"]?.ToString();
-                leagueId = reader["leagueid"]?.ToString();
-                seasonYear = reader["league_year"] != DBNull.Value && int.TryParse(reader["league_year"].ToString(), out var year) ? year : 0;
-            }
-        }
+        string swid = auth?.Swid;
+        string espn_s2 = auth?.EspnS2;
+        string leagueId = leagueData?.LeagueId;
+        int seasonYear = leagueData?.LeagueYear ?? 0;
 
-        // Get teams from ESPN API
         if (!string.IsNullOrEmpty(swid) && !string.IsNullOrEmpty(espn_s2) && !string.IsNullOrEmpty(leagueId) && seasonYear > 0)
         {
             try
@@ -112,7 +85,7 @@ public class AccountModel : PageModel
                 var apiUrl = $"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{seasonYear}/segments/0/leagues/{leagueId}?view=mTeam";
                 httpClient.DefaultRequestHeaders.Add("Cookie", $"SWID={swid}; espn_s2={espn_s2}");
                 var response = await httpClient.GetAsync(apiUrl);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
@@ -125,8 +98,7 @@ public class AccountModel : PageModel
                             var teamId = (int)team["id"];
                             var teamName = team["name"]?.ToString() ?? "";
                             var abbv = team["abbrev"]?.ToString() ?? "";
-                            Console.WriteLine("loc", teamName);
-                            Teams.Add(new TeamInfo { Id = (int)team["id"], Name = teamName + " (" + abbv + ")" });
+                            Teams.Add(new TeamInfo { Id = teamId, Name = teamName + " (" + abbv + ")" });
                         }
                     }
                 }
@@ -157,46 +129,33 @@ public class AccountModel : PageModel
         if (!ModelState.IsValid)
         {
             Message = "Please correct the errors and try again.";
-            await OnGetAsync(); // Repopulate teams
+            await OnGetAsync();
             return Page();
         }
 
-        var connString = _configuration.GetConnectionString("DefaultConnection");
-        using var conn = new NpgsqlConnection(connString);
-        await conn.OpenAsync();
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+        if (user == null)
+            return RedirectToPage("/Login");
 
-        // Get current password hash
-        using var getCmd = new NpgsqlCommand("SELECT passwordhash FROM users WHERE email = @email", conn);
-        getCmd.Parameters.AddWithValue("email", userEmail);
-        var dbPassword = (string)await getCmd.ExecuteScalarAsync();
-
+        var dbPassword = user.PasswordHash;
         var hasher = new PasswordHasher<string>();
         var result = dbPassword != null ? hasher.VerifyHashedPassword(null, dbPassword, Input.CurrentPassword) : PasswordVerificationResult.Failed;
 
         if (result != PasswordVerificationResult.Success)
         {
             Message = "Current password is incorrect.";
-            await OnGetAsync(); // Repopulate teams
+            await OnGetAsync();
             return Page();
         }
 
-        // Update email and/or password
-        string updateSql = "UPDATE users SET email = @newEmail";
-        if (!string.IsNullOrEmpty(Input.NewPassword))
-            updateSql += ", passwordhash = @newPasswordHash";
-        updateSql += " WHERE email = @email";
-
-        using var updateCmd = new NpgsqlCommand(updateSql, conn);
-        updateCmd.Parameters.AddWithValue("newEmail", Input.NewEmail.ToLowerInvariant().Trim());
-        updateCmd.Parameters.AddWithValue("email", userEmail);
+        user.Email = Input.NewEmail.ToLowerInvariant().Trim();
         if (!string.IsNullOrEmpty(Input.NewPassword))
         {
-            var newHash = hasher.HashPassword(null, Input.NewPassword);
-            updateCmd.Parameters.AddWithValue("newPasswordHash", newHash);
+            user.PasswordHash = hasher.HashPassword(null, Input.NewPassword);
         }
-        await updateCmd.ExecuteNonQueryAsync();
+        _dbContext.Users.Update(user);
+        await _dbContext.SaveChangesAsync();
 
-        // Update authentication cookie if email changed
         if (Input.NewEmail.ToLowerInvariant().Trim() != userEmail.ToLowerInvariant().Trim())
         {
             var claims = new[] { new Claim(ClaimTypes.Name, Input.NewEmail.ToLowerInvariant().Trim()) };
@@ -206,7 +165,7 @@ public class AccountModel : PageModel
         }
 
         Message = "Account updated successfully.";
-        await OnGetAsync(); // Repopulate teams
+        await OnGetAsync();
         return Page();
     }
 
@@ -216,9 +175,9 @@ public class AccountModel : PageModel
         if (string.IsNullOrEmpty(userEmail))
             return RedirectToPage("/Login");
 
-        var connString = _configuration.GetConnectionString("DefaultConnection");
-        using var conn = new NpgsqlConnection(connString);
-        await conn.OpenAsync();
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+        if (user == null)
+            return RedirectToPage("/Login");
 
         if (SelectedTeamId == null)
         {
@@ -227,19 +186,13 @@ public class AccountModel : PageModel
             return Page();
         }
 
-        using var updateCmd = new NpgsqlCommand("UPDATE users SET selected_team_id = @teamId WHERE email = @email", conn);
-        updateCmd.Parameters.AddWithValue("teamId", SelectedTeamId.Value);
-        updateCmd.Parameters.AddWithValue("email", userEmail);
-        var rows = await updateCmd.ExecuteNonQueryAsync();
+        user.SelectedTeamId = SelectedTeamId.Value;
+        _dbContext.Users.Update(user);
+        var rows = await _dbContext.SaveChangesAsync();
 
-        if (rows > 0)
-        {
-            TeamMessage = "Team selection saved successfully.";
-        }
-        else
-        {
-            TeamMessage = "Failed to save team selection.";
-        }
+        TeamMessage = rows > 0
+            ? "Team selection saved successfully."
+            : "Failed to save team selection.";
 
         await OnGetAsync();
         return Page();

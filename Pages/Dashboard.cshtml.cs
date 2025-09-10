@@ -5,6 +5,10 @@ public class DashboardModel : AppPageModel
 {
     public string UserEmail { get; set; }
 
+    public DashboardModel(ApplicationDbContext dbContext) : base(dbContext)
+    {
+    }
+
     public IActionResult OnGet()
     {
         UserEmail = HttpContext.Session.GetString("UserEmail");

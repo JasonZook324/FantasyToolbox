@@ -5,14 +5,17 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Npgsql;
+using Microsoft.EntityFrameworkCore;
+using FantasyToolbox.Models;
 
 public class ConnectESPNModel : PageModel
 {
+    private readonly ApplicationDbContext _dbContext;
     private readonly IConfiguration _configuration;
 
-    public ConnectESPNModel(IConfiguration configuration)
+    public ConnectESPNModel(ApplicationDbContext dbContext, IConfiguration configuration)
     {
+        _dbContext = dbContext;
         _configuration = configuration;
     }
 
@@ -43,7 +46,7 @@ public class ConnectESPNModel : PageModel
         public int SeasonYear { get; set; }
     }
 
-    public void OnGet()
+    public async Task OnGetAsync()
     {
         var userEmail = HttpContext.Session.GetString("UserEmail");
         if (string.IsNullOrEmpty(userEmail))
@@ -52,49 +55,27 @@ public class ConnectESPNModel : PageModel
             return;
         }
 
-        var connString = _configuration.GetConnectionString("DefaultConnection");
-        using var conn = new NpgsqlConnection(connString);
-        conn.Open();
-
-        int userId;
-        using (var getUserCmd = new NpgsqlCommand("SELECT userid FROM users WHERE email = @email", conn))
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+        if (user == null)
         {
-            getUserCmd.Parameters.AddWithValue("email", userEmail);
-            var result = getUserCmd.ExecuteScalar();
-            if (result == null)
-            {
-                ErrorMessage = "User not found.";
-                return;
-            }
-            userId = (int)result;
+            ErrorMessage = "User not found.";
+            return;
         }
 
         Input = new InputModel();
 
-        using (var getAuthCmd = new NpgsqlCommand(
-            "SELECT swid, espn_s2 FROM espn_auth WHERE userid = @userid", conn))
+        var auth = await _dbContext.EspnAuth.FirstOrDefaultAsync(a => a.UserId == user.UserId);
+        if (auth != null)
         {
-            getAuthCmd.Parameters.AddWithValue("userid", userId);
-            using var reader = getAuthCmd.ExecuteReader();
-            if (reader.Read())
-            {
-                Input.SWID = reader["swid"]?.ToString();
-                Input.ESPN_S2 = reader["espn_s2"]?.ToString();
-            }
-            reader.Close();
+            Input.SWID = auth.Swid;
+            Input.ESPN_S2 = auth.EspnS2;
         }
 
-        using (var getLeagueCmd = new NpgsqlCommand(
-            "SELECT leagueid, league_year FROM f_league_data WHERE userid = @userid", conn))
+        var leagueData = await _dbContext.FLeagueData.FirstOrDefaultAsync(l => l.UserId == user.UserId);
+        if (leagueData != null)
         {
-            getLeagueCmd.Parameters.AddWithValue("userid", userId);
-            using var reader = getLeagueCmd.ExecuteReader();
-            if (reader.Read())
-            {
-                Input.LeagueId = reader["leagueid"]?.ToString();
-                Input.SeasonYear = reader["league_year"] != DBNull.Value ? Convert.ToInt32(reader["league_year"]) : 0;
-            }
-            reader.Close();
+            Input.LeagueId = leagueData.LeagueId;
+            Input.SeasonYear = leagueData.LeagueYear;
         }
     }
 
@@ -113,44 +94,57 @@ public class ConnectESPNModel : PageModel
             return Page();
         }
 
-        var connString = _configuration.GetConnectionString("DefaultConnection");
-        using var conn = new NpgsqlConnection(connString);
-        await conn.OpenAsync();
-
-        int userId;
-        using (var getUserCmd = new NpgsqlCommand("SELECT userid FROM users WHERE email = @email", conn))
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+        if (user == null)
         {
-            getUserCmd.Parameters.AddWithValue("email", userEmail);
-            var result = await getUserCmd.ExecuteScalarAsync();
-            if (result == null)
+            ErrorMessage = "User not found.";
+            return Page();
+        }
+
+        // Upsert EspnAuth
+        var auth = await _dbContext.EspnAuth.FirstOrDefaultAsync(a => a.UserId == user.UserId);
+        if (auth == null)
+        {
+            auth = new EspnAuth
             {
-                ErrorMessage = "User not found.";
-                return Page();
-            }
-            userId = (int)result;
+                UserId = user.UserId,
+                Swid = Input.SWID.Trim(),
+                EspnS2 = Input.ESPN_S2.Trim()
+            };
+            _dbContext.EspnAuth.Add(auth);
         }
-
-        using (var insertAuthCmd = new NpgsqlCommand(
-            "INSERT INTO espn_auth (userid, swid, espn_s2) VALUES (@userid, @swid, @espn_s2) " +
-            "ON CONFLICT (userid) DO UPDATE SET swid = @swid, espn_s2 = @espn_s2", conn))
+        else
         {
-            insertAuthCmd.Parameters.AddWithValue("userid", userId);
-            insertAuthCmd.Parameters.AddWithValue("swid", Input.SWID.Trim());
-            insertAuthCmd.Parameters.AddWithValue("espn_s2", Input.ESPN_S2.Trim());
-            await insertAuthCmd.ExecuteNonQueryAsync();
+            auth.Swid = Input.SWID.Trim();
+            auth.EspnS2 = Input.ESPN_S2.Trim();
+            _dbContext.EspnAuth.Update(auth);
         }
 
-        using (var insertLeagueCmd = new NpgsqlCommand(
-            "INSERT INTO f_league_data (userid, leagueid, league_year) VALUES (@userid, @leagueid, @league_year) " +
-            "ON CONFLICT (userid) DO UPDATE SET leagueid = @leagueid, league_year = @league_year", conn))
+        // Upsert FLeagueData
+        var leagueData = await _dbContext.FLeagueData.FirstOrDefaultAsync(l => l.UserId == user.UserId);
+        if (leagueData == null)
         {
-            insertLeagueCmd.Parameters.AddWithValue("userid", userId);
-            insertLeagueCmd.Parameters.AddWithValue("leagueid", Input.LeagueId.Trim());
-            insertLeagueCmd.Parameters.AddWithValue("league_year", Input.SeasonYear);
-            await insertLeagueCmd.ExecuteNonQueryAsync();
+            leagueData = new FLeagueData
+            {
+                UserId = user.UserId,
+                LeagueId = Input.LeagueId.Trim(),
+                LeagueYear = Input.SeasonYear
+            };
+            _dbContext.FLeagueData.Add(leagueData);
+        }
+        else
+        {
+            leagueData.LeagueId = Input.LeagueId.Trim();
+            leagueData.LeagueYear = Input.SeasonYear;
+            _dbContext.FLeagueData.Update(leagueData);
         }
 
-        EspnSessionHelper.UpdateEspnConnectedSession(HttpContext, _configuration);
+        await _dbContext.SaveChangesAsync();
+
+
+        // With this line:
+        await EspnSessionHelper.UpdateEspnConnectedSessionAsync(HttpContext, _configuration, _dbContext);
+        
 
         // ESPN API call for private league (requires cookies for authentication)
         try
