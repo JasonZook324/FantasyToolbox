@@ -1,0 +1,76 @@
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] - FantasyToolbox</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="~/css/site.css" />
+    <style>
+        .espn-status {
+            display: inline-block;
+            padding: 0.25em 0.75em;
+            border-radius: 1em;
+            font-size: 0.95em;
+            font-weight: 500;
+            margin-left: 0.5em;
+        }
+        .espn-status.connected {
+            background: #38a169;
+            color: #fff;
+        }
+        .espn-status.not-connected {
+            background: #e53e3e;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <ul class="left-nav">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+            </ul>
+            <ul class="right-nav">
+                @{
+                    var userEmail = HttpContextAccessor.HttpContext?.Session.GetString("UserEmail");
+                    var espnConnected = HttpContextAccessor.HttpContext?.Session.GetString("EspnConnected");
+                    if (string.IsNullOrEmpty(userEmail))
+                    { // Not logged in
+                        <li>
+                            <a href="/Login">Login</a>
+                        </li>
+                    }
+                    else
+                    { // Logged in
+                        <li>
+                            <a asp-page="/ConnectESPN" class="espn-status @(espnConnected == "true" ? "connected" : "not-connected")" style="text-decoration:none;">
+                                ESPN: @(espnConnected == "true" ? "Connected" : "Not Connected")
+                            </a>
+                        </li>
+                        <li>
+                            <span style="margin-right:1rem;">@userEmail</span>
+                        </li>
+                        <li>
+                            <form method="post" asp-page="/Index" asp-page-handler="Logout" style="display:inline;">
+                                <button type="submit">Logout</button>
+                            </form>
+                        </li>
+                    }
+                }
+            </ul>
+        </nav>
+    </header>
+    <main role="main">
+        @RenderBody()
+    </main>
+    <footer>
+        &copy; @DateTime.Now.Year - FantasyToolbox
+    </footer>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

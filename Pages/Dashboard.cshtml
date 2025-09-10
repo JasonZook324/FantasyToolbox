@@ -1,0 +1,59 @@
+@page
+@model DashboardModel
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "_Layout";
+}
+
+<style>
+    .dashboard-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 60vh;
+    }
+    .dashboard-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+        padding: 2.5rem 2rem;
+        width: 100%;
+        max-width: 400px;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        align-items: center;
+    }
+    .dashboard-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 0.5rem;
+        text-align: center;
+    }
+    .dashboard-message {
+        font-size: 1.1rem;
+        color: #38a169;
+        text-align: center;
+    }
+    .dashboard-user {
+        font-size: 1rem;
+        color: #3182ce;
+        margin-top: 0.5rem;
+        text-align: center;
+        word-break: break-all;
+    }
+</style>
+
+<div class="dashboard-container">
+    <div class="dashboard-card">
+        <div class="dashboard-title">Welcome to Your Dashboard</div>
+        <div class="dashboard-message">You are successfully logged in!</div>
+        <div class="dashboard-user">
+            @if (!string.IsNullOrEmpty(Model.UserEmail))
+            {
+                <span>Logged in as <strong>@Model.UserEmail</strong></span>
+            }
+        </div>
+    </div>
+</div>

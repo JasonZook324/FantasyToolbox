@@ -1,0 +1,185 @@
+@page
+@model ConnectESPNModel
+@{
+    ViewData["Title"] = "Connect ESPN Fantasy Football";
+    Layout = "_Layout";
+}
+
+<style>
+    .form-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 60vh;
+    }
+    .form-card {
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+        padding: 2.5rem 2rem;
+        width: 100%;
+        max-width: 420px;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        align-items: stretch;
+        box-sizing: border-box;
+    }
+    .form-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 0.5rem;
+        text-align: center;
+    }
+    .form-message-success {
+        color: #38a169;
+        background: #f0fff4;
+        border-radius: 6px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        text-align: center;
+        font-size: 1.05rem;
+    }
+    .form-message-error {
+        color: #e53e3e;
+        background: #fff5f5;
+        border-radius: 6px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        text-align: center;
+        font-size: 1.05rem;
+    }
+    .form {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        box-sizing: border-box;
+        padding-left: 0;
+        padding-right: 0;
+    }
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+    }
+    .form-group-wide input,
+    .form-group-wide textarea {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+    .form-group-wide {
+        width: 100%;
+    }
+    .form-group-small {
+        display: flex;
+        gap: 1rem;
+        width: 100%;
+        justify-content: space-between;
+    }
+    .form-group-small .form-subgroup {
+        flex: 1 1 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-width: 140px;
+    }
+    .form label {
+        font-weight: 500;
+        color: #2d3748;
+        margin-bottom: 0.25rem;
+        font-size: 1rem;
+    }
+    .form input[type="text"],
+    .form input[type="number"],
+    .form textarea {
+        border: 1px solid #cbd5e0;
+        border-radius: 6px;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        background: #f7fafc;
+        transition: border-color 0.2s;
+        box-sizing: border-box;
+        width: 100%;
+    }
+    .form input[type="text"]:focus,
+    .form input[type="number"]:focus,
+    .form textarea:focus {
+        border-color: #3182ce;
+        outline: none;
+        background: #fff;
+    }
+    .form textarea {
+        resize: vertical;
+        min-height: 80px;
+        max-height: 200px;
+    }
+    .text-danger {
+        color: #e53e3e;
+        font-size: 0.95rem;
+        margin-top: 0.1rem;
+    }
+    .form button[type="submit"] {
+        background: #3182ce;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: 0.75rem 1.5rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        margin-top: 0.5rem;
+        width: 100%;
+        align-self: stretch;
+    }
+    .form button[type="submit"]:hover {
+        background: #2563eb;
+    }
+</style>
+
+<div class="form-container">
+    <div class="form-card">
+        <div class="form-title">Connect ESPN Fantasy Football</div>
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="form-message-success">@Model.SuccessMessage</div>
+        }
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="form-message-error">@Model.ErrorMessage</div>
+        }
+        <form method="post" class="form">
+            <div class="form-group form-group-wide">
+                <label asp-for="Input.SWID"></label>
+                <input asp-for="Input.SWID" type="text" placeholder="SWID" autocomplete="off" />
+                <span asp-validation-for="Input.SWID" class="text-danger"></span>
+            </div>
+            <div class="form-group form-group-wide">
+                <label asp-for="Input.ESPN_S2"></label>
+                <textarea asp-for="Input.ESPN_S2" placeholder="espn_s2" rows="4" maxlength="500" autocomplete="off"></textarea>
+                <span asp-validation-for="Input.ESPN_S2" class="text-danger"></span>
+            </div>
+            <div class="form-group-small">
+                <div class="form-subgroup">
+                    <label asp-for="Input.LeagueId"></label>
+                    <input asp-for="Input.LeagueId" type="text" placeholder="League ID" autocomplete="off" />
+                    <span asp-validation-for="Input.LeagueId" class="text-danger"></span>
+                </div>
+                <div class="form-subgroup">
+                    <label asp-for="Input.SeasonYear"></label>
+                    <input asp-for="Input.SeasonYear" type="number" min="2000" max="2100" placeholder="Season Year" autocomplete="off" />
+                    <span asp-validation-for="Input.SeasonYear" class="text-danger"></span>
+                </div>
+            </div>
+            <button type="submit">Connect ESPN Account</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
