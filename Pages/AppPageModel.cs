@@ -1,18 +1,37 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using Npgsql;
+using Microsoft.EntityFrameworkCore;
 using System;
+using System.Threading.Tasks;
+using FantasyToolbox.Models; // Ensure this matches your actual models namespace
+
+// DbContext
+public class ApplicationDbContext : DbContext
+{
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+
+    public DbSet<User> Users { get; set; }
+    public DbSet<EspnAuth> EspnAuth { get; set; }
+    public DbSet<FLeagueData> FLeagueData { get; set; }
+}
 
 public class AppPageModel : PageModel
 {
+    private readonly ApplicationDbContext _dbContext;
+
+    public AppPageModel(ApplicationDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
     public override void OnPageHandlerExecuting(Microsoft.AspNetCore.Mvc.Filters.PageHandlerExecutingContext context)
     {
-        UpdateEspnConnectedSession();
+        UpdateEspnConnectedSessionAsync().GetAwaiter().GetResult();
         base.OnPageHandlerExecuting(context);
     }
 
-    protected void UpdateEspnConnectedSession()
+    protected async Task UpdateEspnConnectedSessionAsync()
     {
         var userEmail = HttpContext.Session.GetString("UserEmail");
         if (string.IsNullOrEmpty(userEmail))
@@ -21,53 +40,24 @@ public class AppPageModel : PageModel
             return;
         }
 
-        var configuration = HttpContext.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration;
-        var connString = configuration.GetConnectionString("DefaultConnection");
-        using var conn = new NpgsqlConnection(connString);
-        conn.Open();
-
-        // Get user id from users table
-        int userId;
-        using (var getUserCmd = new NpgsqlCommand("SELECT userid FROM users WHERE email = @email", conn))
+        // Get user id from Users table
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+        if (user == null)
         {
-            getUserCmd.Parameters.AddWithValue("email", userEmail);
-            var result = getUserCmd.ExecuteScalar();
-            if (result == null)
-            {
-                HttpContext.Session.SetString("EspnConnected", "false");
-                return;
-            }
-            userId = (int)result;
+            HttpContext.Session.SetString("EspnConnected", "false");
+            return;
         }
+        int userId = user.UserId;
 
         // Get ESPN Auth cookies
-        string swid = null, espn_s2 = null;
-        using (var getAuthCmd = new NpgsqlCommand("SELECT swid, espn_s2 FROM espn_auth WHERE userid = @userid", conn))
-        {
-            getAuthCmd.Parameters.AddWithValue("userid", userId);
-            using var reader = getAuthCmd.ExecuteReader();
-            if (reader.Read())
-            {
-                swid = reader["swid"]?.ToString();
-                espn_s2 = reader["espn_s2"]?.ToString();
-            }
-            reader.Close();
-        }
+        var auth = await _dbContext.EspnAuth.FirstOrDefaultAsync(a => a.UserId == userId);
+        string swid = auth?.Swid;
+        string espn_s2 = auth?.EspnS2;
 
         // Get League Data
-        string leagueid = null;
-        int league_year = 0;
-        using (var getLeagueCmd = new NpgsqlCommand("SELECT leagueid, league_year FROM f_league_data WHERE userid = @userid", conn))
-        {
-            getLeagueCmd.Parameters.AddWithValue("userid", userId);
-            using var reader = getLeagueCmd.ExecuteReader();
-            if (reader.Read())
-            {
-                leagueid = reader["leagueid"]?.ToString();
-                league_year = reader["league_year"] != DBNull.Value ? Convert.ToInt32(reader["league_year"]) : 0;
-            }
-            reader.Close();
-        }
+        var leagueData = await _dbContext.FLeagueData.FirstOrDefaultAsync(l => l.UserId == userId);
+        string leagueid = leagueData?.LeagueId;
+        int league_year = leagueData?.LeagueYear ?? 0;
 
         bool hasAuth = !string.IsNullOrEmpty(swid) && !string.IsNullOrEmpty(espn_s2);
         bool hasLeague = !string.IsNullOrEmpty(leagueid) && league_year != 0;
