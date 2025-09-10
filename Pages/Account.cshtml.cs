@@ -112,33 +112,23 @@ public class AccountModel : PageModel
                 var apiUrl = $"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{seasonYear}/segments/0/leagues/{leagueId}?view=mTeam";
                 httpClient.DefaultRequestHeaders.Add("Cookie", $"SWID={swid}; espn_s2={espn_s2}");
                 var response = await httpClient.GetAsync(apiUrl);
-                var json = await response.Content.ReadAsStringAsync();
-                var doc = JObject.Parse(json);
-                var teams = doc["teams"];
-                if (teams != null)
+                
+                if (response.IsSuccessStatusCode)
                 {
-                    foreach (var team in teams)
+                    var json = await response.Content.ReadAsStringAsync();
+                    var doc = JObject.Parse(json);
+                    var teams = doc["teams"];
+                    if (teams != null)
                     {
-                        var teamId = (int)team["id"];
-                        var teamName = team["name"]?.ToString() ?? "";
-                        var abbv = team["abbrev"]?.ToString() ?? "";
-                        Console.WriteLine("loc", teamName);
-                        Teams.Add(new TeamInfo { Id = (int)team["id"], Name = teamName + " ("+abbv+")" } );
+                        foreach (var team in teams)
+                        {
+                            var teamId = (int)team["id"];
+                            var teamName = team["name"]?.ToString() ?? "";
+                            var abbv = team["abbrev"]?.ToString() ?? "";
+                            Console.WriteLine("loc", teamName);
+                            Teams.Add(new TeamInfo { Id = (int)team["id"], Name = teamName + " (" + abbv + ")" });
+                        }
                     }
-                }
-                    if (response.IsSuccessStatusCode)
-                {
-
-                    //using var doc = JsonDocument.Parse(json);
-                    //if (doc.RootElement.TryGetProperty("teams", out var teamsProp))
-                    //{
-                    //    foreach (var team in teamsProp.EnumerateArray())
-                    //    {
-                    //        var id = team.GetProperty("id").GetInt32();
-                    //        var name = team.GetProperty("location").GetString() + " " + team.GetProperty("nickname").GetString();
-                    //        Teams.Add(new TeamInfo { Id = id, Name = name });
-                    //    }
-                    //}
                 }
                 else
                 {

@@ -42,6 +42,7 @@ public class LoginModel : PageModel
     public IActionResult OnGet()
     {
         var userEmail = HttpContext.Session.GetString("UserEmail");
+        RememberMe = true; // Default to checked
         if (!string.IsNullOrEmpty(userEmail))
         {
             // Already authenticated, redirect to dashboard

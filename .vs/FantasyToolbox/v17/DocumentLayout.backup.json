@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|c:\\users\\64515c\\source\\repos\\learning\\fantasytoolbox\\pages\\login.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|solutionrelative:pages\\login.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|c:\\users\\64515c\\source\\repos\\learning\\fantasytoolbox\\pages\\account.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|solutionrelative:pages\\account.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -17,10 +21,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|c:\\users\\64515c\\source\\repos\\learning\\fantasytoolbox\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|c:\\users\\64515c\\source\\repos\\learning\\fantasytoolbox\\pages\\login.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|solutionrelative:pages\\login.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{D5BA6068-249A-4A6A-89BB-DF77D3F3DEA0}|FantasyToolbox.csproj|c:\\users\\64515c\\source\\repos\\learning\\fantasytoolbox\\pages\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
@@ -61,7 +61,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -69,13 +69,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "Account.cshtml.cs",
               "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Account.cshtml.cs",
               "RelativeDocumentMoniker": "Pages\\Account.cshtml.cs",
               "ToolTip": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Account.cshtml.cs",
               "RelativeToolTip": "Pages\\Account.cshtml.cs",
-              "ViewState": "AgIAAHAAAAAAAAAAAAAqwHsAAAA6AAAAAAAAAA==",
+              "ViewState": "AgIAAGoAAAAAAAAAAAAqwIIAAAAVAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-09-10T19:58:40.715Z",
               "EditorCaption": ""
@@ -94,15 +94,16 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 0,
               "Title": "Login.cshtml.cs",
               "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Login.cshtml.cs",
               "RelativeDocumentMoniker": "Pages\\Login.cshtml.cs",
               "ToolTip": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Login.cshtml.cs",
               "RelativeToolTip": "Pages\\Login.cshtml.cs",
-              "ViewState": "AgIAAFwAAAAAAAAAAAAYwG8AAAAIAAAAAAAAAA==",
+              "ViewState": "AgIAACAAAAAAAAAAAAAvwHAAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-10T19:05:22.026Z"
+              "WhenOpened": "2025-09-10T19:05:22.026Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -154,7 +155,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "_Layout.cshtml",
               "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Shared\\_Layout.cshtml",
               "RelativeDocumentMoniker": "Pages\\Shared\\_Layout.cshtml",
@@ -162,12 +163,11 @@
               "RelativeToolTip": "Pages\\Shared\\_Layout.cshtml",
               "ViewState": "AgIAADIAAAAAAAAAAAAswE8AAAAyAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-09-09T19:41:58.912Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-09T19:41:58.912Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "Account.cshtml",
               "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Pages\\Account.cshtml",
               "RelativeDocumentMoniker": "Pages\\Account.cshtml",
@@ -175,12 +175,11 @@
               "RelativeToolTip": "Pages\\Account.cshtml",
               "ViewState": "AgIAABwAAAAAAAAAAAASwCoAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-09-10T19:58:48.888Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-10T19:58:48.888Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\64515C\\source\\repos\\LEARNING\\FantasyToolbox\\Program.cs",
               "RelativeDocumentMoniker": "Program.cs",
@@ -188,8 +187,7 @@
               "RelativeToolTip": "Program.cs",
               "ViewState": "AgIAAAMAAAAAAAAAAAAtwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-10T19:19:51.815Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-10T19:19:51.815Z"
             },
             {
               "$type": "Document",
