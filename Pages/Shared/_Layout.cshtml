@@ -8,6 +8,7 @@
     <title>@ViewData["Title"] - FantasyToolbox</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <style>
         .espn-status {
             display: inline-block;
@@ -47,6 +48,8 @@
             <ul class="right-nav">
                 @{
                     var espnConnected = HttpContextAccessor.HttpContext?.Session.GetString("EspnConnected");
+                    var firstName = HttpContextAccessor.HttpContext?.Session.GetString("FirstName");
+                    var lastName = HttpContextAccessor.HttpContext?.Session.GetString("LastName");
                     if (string.IsNullOrEmpty(userEmail))
                     { // Not logged in
                         <li>
@@ -61,7 +64,9 @@
                             </a>
                         </li>
                         <li>
-                            <span style="margin-right:1rem;">@userEmail</span>
+                            <span style="margin-right:1rem;">
+                                @(string.IsNullOrEmpty(firstName) && string.IsNullOrEmpty(lastName) ? userEmail : $"{firstName} {lastName}")
+                            </span>
                         </li>
                         <li>
                             <form method="post" asp-page="/Index" asp-page-handler="Logout" style="display:inline;">
