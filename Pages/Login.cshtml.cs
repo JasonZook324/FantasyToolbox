@@ -4,6 +4,9 @@ using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Npgsql;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
 
 public class LoginModel : PageModel
 {
@@ -21,6 +24,9 @@ public class LoginModel : PageModel
     public string Action { get; set; } // "login"
 
     public string Message { get; set; }
+
+    [BindProperty]
+    public bool RememberMe { get; set; } // Add RememberMe property
 
     public class InputModel
     {
@@ -56,7 +62,6 @@ public class LoginModel : PageModel
         using var conn = new NpgsqlConnection(connString);
         await conn.OpenAsync();
 
-        // Query passwordhash and isactive
         using var loginCmd = new NpgsqlCommand(
             "SELECT passwordhash, isactive FROM users WHERE email = @email", conn);
         loginCmd.Parameters.AddWithValue("email", Input.Email.ToLowerInvariant().Trim());
@@ -92,7 +97,20 @@ public class LoginModel : PageModel
         updateCmd.Parameters.AddWithValue("email", Input.Email.ToLowerInvariant().Trim());
         await updateCmd.ExecuteNonQueryAsync();
 
+        // Set session
         HttpContext.Session.SetString("UserEmail", Input.Email.ToLowerInvariant().Trim());
+
+        // Set persistent authentication cookie
+        var claims = new[] { new Claim(ClaimTypes.Name, Input.Email.ToLowerInvariant().Trim()) };
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+        var authProperties = new AuthenticationProperties
+        {
+            IsPersistent = RememberMe, // true if "Remember Me" checked
+            ExpiresUtc = RememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(1)
+        };
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
+
         Message = "Login successful!";
         return RedirectToPage("/Dashboard");
     }
