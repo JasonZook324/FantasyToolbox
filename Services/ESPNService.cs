@@ -5,10 +5,11 @@ using Microsoft.EntityFrameworkCore;
 public class ESPNService : IESPNService
 {
     private readonly ApplicationDbContext _dbContext;
-
-    public ESPNService(ApplicationDbContext dbContext)
+    private readonly ILogService _logger;
+    public ESPNService(ApplicationDbContext dbContext, ILogService logger)
     {
         _dbContext = dbContext;
+        _logger = logger;
     }
 
     public async Task<User> GetUserByEmailAsync(string email)
@@ -68,5 +69,38 @@ public class ESPNService : IESPNService
             _dbContext.FLeagueData.Update(leagueData);
         }
         await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task UpdateEspnConnectedSessionAsync(HttpContext httpContext)
+    {
+        var userEmail = httpContext.Session.GetString("UserEmail");
+        if (string.IsNullOrEmpty(userEmail))
+        {
+            httpContext.Session.SetString("EspnConnected", "false");
+            return;
+        }
+
+        var user = await GetUserByEmailAsync(userEmail);
+        if (user == null)
+        {
+            httpContext.Session.SetString("EspnConnected", "false");
+            return;
+        }
+
+        try
+        {
+            var auth = await GetEspnAuthByUserIdAsync(user.UserId);
+            var leagueData = await GetLeagueDataByUserIdAsync(user.UserId);
+
+            bool hasAuth = auth != null && !string.IsNullOrEmpty(auth.Swid) && !string.IsNullOrEmpty(auth.EspnS2);
+            bool hasLeague = leagueData != null && !string.IsNullOrEmpty(leagueData.LeagueId) && leagueData.LeagueYear != 0;
+            bool isConnected = hasAuth && hasLeague;
+
+            httpContext.Session.SetString("EspnConnected", isConnected ? "true" : "false");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogAsync($"Failed to get auth/league data for {user.UserId}", "Error", ex.Message).GetAwaiter().GetResult();
+        }
     }
 }

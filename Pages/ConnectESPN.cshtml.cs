@@ -6,16 +6,14 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using FantasyToolbox.Models;
 
-public class ConnectESPNModel : PageModel
+public class ConnectESPNModel : AppPageModel
 {
     private readonly IESPNService _espnService;
-    private readonly IConfiguration _configuration;
-    private readonly IEspnSessionService _espnSessionService;
-    public ConnectESPNModel(IESPNService espnService, IConfiguration configuration, IEspnSessionService espnSessionService)
+    private readonly ILogService _logger;
+    public ConnectESPNModel(IESPNService espnService, ILogService logger) : base(logger, espnService)
     {
         _espnService = espnService;
-        _configuration = configuration;
-        _espnSessionService = espnSessionService;
+        _logger = logger;
     }
 
     [BindProperty]
@@ -99,11 +97,17 @@ public class ConnectESPNModel : PageModel
             ErrorMessage = "User not found.";
             return Page();
         }
-
-        await _espnService.UpsertEspnAuthAsync(user.UserId, Input.SWID.Trim(), Input.ESPN_S2.Trim());
-        await _espnService.UpsertLeagueDataAsync(user.UserId, Input.LeagueId.Trim(), Input.SeasonYear);
-
-        await EspnSessionHelper.UpdateEspnConnectedSessionAsync(HttpContext, _espnSessionService);
+        try
+        {
+            await _espnService.UpsertEspnAuthAsync(user.UserId, Input.SWID.Trim(), Input.ESPN_S2.Trim());
+            await _espnService.UpsertLeagueDataAsync(user.UserId, Input.LeagueId.Trim(), Input.SeasonYear);
+            await _espnService.UpdateEspnConnectedSessionAsync(HttpContext);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogAsync($"Error saving ESPN auth or league data for user {userEmail}", "Error", ex.Message).GetAwaiter().GetResult();
+        }
+       
 
         try
         {
@@ -120,6 +124,7 @@ public class ConnectESPNModel : PageModel
             if (!response.IsSuccessStatusCode)
             {
                 ErrorMessage = $"Failed to connect to ESPN API. Status: {(int)response.StatusCode} {response.ReasonPhrase}. Response: {json.Substring(0, Math.Min(json.Length, 300))}";
+                _logger.LogAsync($"Failed ESPN API connection for user {userEmail}", "Error", ErrorMessage).GetAwaiter().GetResult();
                 return Page();
             }
 
@@ -136,18 +141,21 @@ public class ConnectESPNModel : PageModel
                 else
                 {
                     ErrorMessage = $"Could not retrieve league name from ESPN API. Raw response: {json.Substring(0, Math.Min(json.Length, 500))}\nFull response:\n{json}";
+                    _logger.LogAsync($"Failed to get league name from ESPN API for user {userEmail}", "Error", ErrorMessage).GetAwaiter().GetResult();
                     return Page();
                 }
             }
             catch (JsonException)
             {
                 ErrorMessage = $"ESPN API did not return JSON. Raw response: {json.Substring(0, Math.Min(json.Length, 500))}\nFull response:\n{json}";
+                _logger.LogAsync($"Invalid JSON from ESPN API for user {userEmail}", "Error", ErrorMessage).GetAwaiter().GetResult();
                 return Page();
             }
         }
         catch (Exception ex)
         {
             ErrorMessage = $"An error occurred while connecting to the ESPN API: {ex.Message}";
+            _logger.LogAsync($"Exception connecting to ESPN API for user {userEmail}", "Error", ex.Message).GetAwaiter().GetResult();
             return Page();
         }
 

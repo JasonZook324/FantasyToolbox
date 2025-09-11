@@ -24,7 +24,6 @@ namespace FantasyToolbox.Pages
                 return RedirectToPage("/Dashboard");
             }
             return Page();
-            //UserEmail = HttpContext.Session.GetString("UserEmail");
         }
 
         public IActionResult OnPostLogout()

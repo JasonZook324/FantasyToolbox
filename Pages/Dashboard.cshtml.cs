@@ -1,17 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Threading.Tasks;
 
 public class DashboardModel : AppPageModel
 {
     private readonly IUserService _userService;
     private readonly ILogService _logger;
+    private readonly IESPNService _ESPNService;
 
     public string? UserEmail { get; set; }
     public User? CurrentUser { get; set; }
 
-    public DashboardModel(IEspnSessionService espnSessionService, IUserService userService, ILogService logger)
-        : base(espnSessionService, logger)
+    public DashboardModel(IESPNService espnService, IUserService userService, ILogService logger)
+        : base(logger, espnService)
     {
         _userService = userService;
         _logger = logger;
