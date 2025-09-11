@@ -22,7 +22,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddSession();
-
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IESPNService, ESPNService>();
+builder.Services.AddScoped<IEspnSessionService, EspnSessionService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

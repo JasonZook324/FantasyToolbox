@@ -2,21 +2,20 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using FantasyToolbox.Models;
 
 public class ConnectESPNModel : PageModel
 {
-    private readonly ApplicationDbContext _dbContext;
+    private readonly IESPNService _espnService;
     private readonly IConfiguration _configuration;
-
-    public ConnectESPNModel(ApplicationDbContext dbContext, IConfiguration configuration)
+    private readonly IEspnSessionService _espnSessionService;
+    public ConnectESPNModel(IESPNService espnService, IConfiguration configuration, IEspnSessionService espnSessionService)
     {
-        _dbContext = dbContext;
+        _espnService = espnService;
         _configuration = configuration;
+        _espnSessionService = espnSessionService;
     }
 
     [BindProperty]
@@ -55,7 +54,7 @@ public class ConnectESPNModel : PageModel
             return;
         }
 
-        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+        var user = await _espnService.GetUserByEmailAsync(userEmail);
         if (user == null)
         {
             ErrorMessage = "User not found.";
@@ -64,14 +63,14 @@ public class ConnectESPNModel : PageModel
 
         Input = new InputModel();
 
-        var auth = await _dbContext.EspnAuth.FirstOrDefaultAsync(a => a.UserId == user.UserId);
+        var auth = await _espnService.GetEspnAuthByUserIdAsync(user.UserId);
         if (auth != null)
         {
             Input.SWID = auth.Swid;
             Input.ESPN_S2 = auth.EspnS2;
         }
 
-        var leagueData = await _dbContext.FLeagueData.FirstOrDefaultAsync(l => l.UserId == user.UserId);
+        var leagueData = await _espnService.GetLeagueDataByUserIdAsync(user.UserId);
         if (leagueData != null)
         {
             Input.LeagueId = leagueData.LeagueId;
@@ -94,59 +93,18 @@ public class ConnectESPNModel : PageModel
             return Page();
         }
 
-        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+        var user = await _espnService.GetUserByEmailAsync(userEmail);
         if (user == null)
         {
             ErrorMessage = "User not found.";
             return Page();
         }
 
-        // Upsert EspnAuth
-        var auth = await _dbContext.EspnAuth.FirstOrDefaultAsync(a => a.UserId == user.UserId);
-        if (auth == null)
-        {
-            auth = new EspnAuth
-            {
-                UserId = user.UserId,
-                Swid = Input.SWID.Trim(),
-                EspnS2 = Input.ESPN_S2.Trim()
-            };
-            _dbContext.EspnAuth.Add(auth);
-        }
-        else
-        {
-            auth.Swid = Input.SWID.Trim();
-            auth.EspnS2 = Input.ESPN_S2.Trim();
-            _dbContext.EspnAuth.Update(auth);
-        }
+        await _espnService.UpsertEspnAuthAsync(user.UserId, Input.SWID.Trim(), Input.ESPN_S2.Trim());
+        await _espnService.UpsertLeagueDataAsync(user.UserId, Input.LeagueId.Trim(), Input.SeasonYear);
 
-        // Upsert FLeagueData
-        var leagueData = await _dbContext.FLeagueData.FirstOrDefaultAsync(l => l.UserId == user.UserId);
-        if (leagueData == null)
-        {
-            leagueData = new FLeagueData
-            {
-                UserId = user.UserId,
-                LeagueId = Input.LeagueId.Trim(),
-                LeagueYear = Input.SeasonYear
-            };
-            _dbContext.FLeagueData.Add(leagueData);
-        }
-        else
-        {
-            leagueData.LeagueId = Input.LeagueId.Trim();
-            leagueData.LeagueYear = Input.SeasonYear;
-            _dbContext.FLeagueData.Update(leagueData);
-        }
+        await EspnSessionHelper.UpdateEspnConnectedSessionAsync(HttpContext, _espnSessionService);
 
-        await _dbContext.SaveChangesAsync();
-
-
-        // With this line:
-        await EspnSessionHelper.UpdateEspnConnectedSessionAsync(HttpContext, _configuration, _dbContext);
-        
-
-        // ESPN API call for private league (requires cookies for authentication)
         try
         {
             using var handler = new HttpClientHandler();
@@ -155,7 +113,7 @@ public class ConnectESPNModel : PageModel
             using var httpClient = new HttpClient(handler);
             var apiUrl = $"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{Input.SeasonYear}/segments/0/leagues/{Input.LeagueId}?view=mSettings";
             httpClient.DefaultRequestHeaders.Add("Cookie", $"SWID={Input.SWID.Trim()}; espn_s2={Input.ESPN_S2.Trim()}");
-            
+
             var response = await httpClient.GetAsync(apiUrl);
             var json = await response.Content.ReadAsStringAsync();
 
@@ -169,7 +127,6 @@ public class ConnectESPNModel : PageModel
             {
                 using var doc = JsonDocument.Parse(json);
 
-                // Extract league name from settings.name
                 if (doc.RootElement.TryGetProperty("settings", out var settingsProp) &&
                     settingsProp.TryGetProperty("name", out var leagueNameProp))
                 {
