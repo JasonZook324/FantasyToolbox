@@ -7,10 +7,12 @@ using Microsoft.AspNetCore.Identity;
 public class RegisterModel : PageModel
 {
     private readonly IUserService _userService;
+    private readonly ILogService _logger;
 
-    public RegisterModel(IUserService userService)
+    public RegisterModel(IUserService userService, ILogService logger)
     {
         _userService = userService;
+        _logger = logger;
     }
 
     [BindProperty]
@@ -57,17 +59,24 @@ public class RegisterModel : PageModel
         if (!ModelState.IsValid)
         {
             Message = "Please correct the errors and try again.";
+            _logger.LogAsync("Invalid registration attempt.").GetAwaiter().GetResult();
             return Page();
         }
 
         var email = Input.Email.ToLowerInvariant().Trim();
-        var exists = await _userService.UserExistsAsync(email);
-
-        if (exists)
+        try
         {
+            var exists = await _userService.UserExistsAsync(email);
+        }
+        catch (Exception ex) 
+        {
+            _logger.LogAsync("Error checking user existence: " + ex.Message, "Error", ex.StackTrace).GetAwaiter().GetResult();
             Message = "Account already exists or invalid input.";
             return Page();
         }
+
+        
+       
 
         var hasher = new PasswordHasher<string>();
         var hashedPassword = hasher.HashPassword(null, Input.Password);
@@ -81,9 +90,17 @@ public class RegisterModel : PageModel
             IsActive = true
         };
 
-        await _userService.CreateUserAsync(user);
-
-        Message = "Account created. Please log in.";
-        return RedirectToPage("/Login");
+        try
+        {
+            await _userService.CreateUserAsync(user);
+            Message = "Account created. Please log in.";
+            return RedirectToPage("/Login");
+        } catch (Exception ex) 
+        {
+            _logger.LogAsync("Error creating user: " + ex.Message, "Error", ex.Message).GetAwaiter().GetResult();
+            Message = "Error creating account. Please try again." + ex.Message;
+            
+        }
+        return Page();
     }
 }
