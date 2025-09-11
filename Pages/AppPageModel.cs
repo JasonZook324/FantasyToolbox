@@ -1,21 +1,10 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Threading.Tasks;
 using FantasyToolbox.Models; // Ensure this matches your actual models namespace
 
-//DbContext
-public class ApplicationDbContext : DbContext
-{
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
-
-    public DbSet<User> Users { get; set; }
-    public DbSet<EspnAuth> EspnAuth { get; set; }
-    public DbSet<FLeagueData> FLeagueData { get; set; }
-    public DbSet<AppLog> AppLogs { get; set; }
-}
 
 public class AppPageModel : PageModel
 {
@@ -37,7 +26,6 @@ public class AppPageModel : PageModel
     protected async Task UpdateEspnConnectedSessionAsync()
     {
         await _espnSessionService.UpdateEspnConnectedSessionAsync(HttpContext);
-        
     }
 
     public static explicit operator AppPageModel(ConnectESPNModel v)
