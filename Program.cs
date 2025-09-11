@@ -25,6 +25,7 @@ builder.Services.AddSession();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IESPNService, ESPNService>();
 builder.Services.AddScoped<IEspnSessionService, EspnSessionService>();
+builder.Services.AddScoped<ILogService, LogService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

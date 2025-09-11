@@ -10,10 +10,12 @@ using System.Security.Claims;
 public class LoginModel : PageModel
 {
     private readonly IUserService _userService;
+    private readonly ILogService _logger;
 
-    public LoginModel(IUserService userService)
+    public LoginModel(IUserService userService, ILogService logger)
     {
         _userService = userService;
+        _logger = logger;
     }
 
     [BindProperty]
@@ -62,12 +64,14 @@ public class LoginModel : PageModel
         if (user == null)
         {
             Message = "Login is invalid.";
+            _logger.LogAsync($"Failed login attempt for email: {Input.Email}").GetAwaiter().GetResult();
             return Page();
         }
 
         if (!user.IsActive)
         {
             Message = "Account is inactive. Please contact support.";
+            _logger.LogAsync($"Inactive account login attempt for email: {Input.Email}").GetAwaiter().GetResult();
             return Page();
         }
 
@@ -77,6 +81,7 @@ public class LoginModel : PageModel
         if (result != PasswordVerificationResult.Success)
         {
             Message = "Login is invalid.";
+            _logger.LogAsync($"Failed login attempt for email: {Input.Email}").GetAwaiter().GetResult();
             return Page();
         }
 
@@ -94,9 +99,19 @@ public class LoginModel : PageModel
             IsPersistent = RememberMe,
             ExpiresUtc = RememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(1)
         };
-        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
 
-        Message = "Login successful!";
-        return RedirectToPage("/Dashboard");
+        try
+        {
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
+            Message = "Login successful!";
+            return RedirectToPage("/Dashboard");
+        }
+        catch (Exception ex)
+        {
+            Message = "An error occurred during login. Please try again.";
+            await _logger.LogAsync($"Error during login for email: {Input.Email}. Exception: {ex.Message}", "Error", ex.ToString());
+            return Page();
+        }
+
     }
 }
