@@ -8,4 +8,5 @@ public interface IESPNService
     Task<FLeagueData> GetLeagueDataByUserIdAsync(int userId);
     Task UpsertEspnAuthAsync(int userId, string swid, string espnS2);
     Task UpsertLeagueDataAsync(int userId, string leagueId, int leagueYear);
+    Task UpdateEspnConnectedSessionAsync(HttpContext httpContext);
 }

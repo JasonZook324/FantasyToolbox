@@ -8,28 +8,31 @@ using FantasyToolbox.Models; // Ensure this matches your actual models namespace
 
 public class AppPageModel : PageModel
 {
-    private readonly IEspnSessionService _espnSessionService;
+    //private readonly IEspnSessionService _espnSessionService;
     private readonly ILogService _logger;
-
-    public AppPageModel(IEspnSessionService espnSessionService, ILogService logger)
+    private readonly IESPNService _espnService;
+    public AppPageModel(ILogService logger, IESPNService espnService)
     {
-        _espnSessionService = espnSessionService;
+        //_espnSessionService = espnSessionService;
         _logger = logger;
+        _espnService = espnService;
     }
 
     public override void OnPageHandlerExecuting(Microsoft.AspNetCore.Mvc.Filters.PageHandlerExecutingContext context)
     {
-        UpdateEspnConnectedSessionAsync().GetAwaiter().GetResult();
+        UpdateEspnConnectedSessionAsync(context.HttpContext).GetAwaiter().GetResult();
         base.OnPageHandlerExecuting(context);
     }
 
-    protected async Task UpdateEspnConnectedSessionAsync()
+    protected async Task UpdateEspnConnectedSessionAsync(HttpContext _context)
     {
-        await _espnSessionService.UpdateEspnConnectedSessionAsync(HttpContext);
+        if (_espnService == null)
+        {
+            await _logger.LogAsync("IESPNService is not injected (null) in AppPageModel.", "Error");
+            throw new InvalidOperationException("IESPNService is not available. Check DI configuration.");
+        }
+        await _espnService.UpdateEspnConnectedSessionAsync(_context);
     }
 
-    public static explicit operator AppPageModel(ConnectESPNModel v)
-    {
-        throw new NotImplementedException();
-    }
+    
 }

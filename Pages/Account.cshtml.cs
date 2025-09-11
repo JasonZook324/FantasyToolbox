@@ -10,15 +10,22 @@ using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 
 [Authorize]
-public class AccountModel : PageModel
+public class AccountModel : AppPageModel
 {
     private readonly ApplicationDbContext _dbContext;
-
-    public AccountModel(ApplicationDbContext dbContext)
+    private readonly ILogService _logger;
+    private readonly IESPNService _espnService;
+    //public AccountModel(ApplicationDbContext dbContext, ILogService logger) : base(logger, null)
+    //{
+    //    _dbContext = dbContext;
+    //    _logger = logger;
+    //}
+    public AccountModel(ILogService logger, IESPNService espnService, ApplicationDbContext dbContext) : base(logger, espnService)
     {
+        _espnService = espnService;
+        _logger = logger;
         _dbContext = dbContext;
     }
-
     [BindProperty]
     public InputModel Input { get; set; }
 
@@ -105,16 +112,19 @@ public class AccountModel : PageModel
                 else
                 {
                     TeamMessage = $"Failed to fetch teams from ESPN API. Status: {(int)response.StatusCode} {response.ReasonPhrase}";
+                    _logger.LogAsync($"Failed fetch teams from ESPN API for {userEmail}", "Error", TeamMessage).GetAwaiter().GetResult();
                 }
             }
             catch
             {
                 TeamMessage = "Error connecting to ESPN API for teams.";
+                _logger.LogAsync($"Error connecting to ESPN API for teams for {userEmail}", "Error", TeamMessage).GetAwaiter().GetResult();
             }
         }
         else
         {
             TeamMessage = "Missing ESPN credentials or league info.";
+            _logger.LogAsync($"Missing ESPN credentials or league info for {userEmail}", "Warning", TeamMessage).GetAwaiter().GetResult();
         }
 
         return Page();
