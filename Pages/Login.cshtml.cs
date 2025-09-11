@@ -6,15 +6,14 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
-using Microsoft.EntityFrameworkCore;
 
 public class LoginModel : PageModel
 {
-    private readonly ApplicationDbContext _dbContext;
+    private readonly IUserService _userService;
 
-    public LoginModel(ApplicationDbContext dbContext)
+    public LoginModel(IUserService userService)
     {
-        _dbContext = dbContext;
+        _userService = userService;
     }
 
     [BindProperty]
@@ -59,9 +58,7 @@ public class LoginModel : PageModel
             return Page();
         }
 
-        var user = await _dbContext.Users
-            .FirstOrDefaultAsync(u => u.Email == Input.Email.ToLowerInvariant().Trim());
-
+        var user = await _userService.GetUserByEmailAsync(Input.Email);
         if (user == null)
         {
             Message = "Login is invalid.";
@@ -83,8 +80,7 @@ public class LoginModel : PageModel
             return Page();
         }
 
-        user.LastLogin = DateTime.UtcNow;
-        await _dbContext.SaveChangesAsync();
+        await _userService.UpdateLastLoginAsync(user);
 
         HttpContext.Session.SetString("UserEmail", user.Email);
         HttpContext.Session.SetString("FirstName", user.FirstName ?? "");
