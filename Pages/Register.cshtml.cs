@@ -3,15 +3,14 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 public class RegisterModel : PageModel
 {
-    private readonly ApplicationDbContext _dbContext;
+    private readonly IUserService _userService;
 
-    public RegisterModel(ApplicationDbContext dbContext)
+    public RegisterModel(IUserService userService)
     {
-        _dbContext = dbContext;
+        _userService = userService;
     }
 
     [BindProperty]
@@ -62,7 +61,7 @@ public class RegisterModel : PageModel
         }
 
         var email = Input.Email.ToLowerInvariant().Trim();
-        var exists = await _dbContext.Users.AnyAsync(u => u.Email == email);
+        var exists = await _userService.UserExistsAsync(email);
 
         if (exists)
         {
@@ -82,8 +81,7 @@ public class RegisterModel : PageModel
             IsActive = true
         };
 
-        _dbContext.Users.Add(user);
-        await _dbContext.SaveChangesAsync();
+        await _userService.CreateUserAsync(user);
 
         Message = "Account created. Please log in.";
         return RedirectToPage("/Login");

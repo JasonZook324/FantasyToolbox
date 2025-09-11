@@ -22,4 +22,15 @@ public class UserService : IUserService
         _dbContext.Users.Update(user);
         await _dbContext.SaveChangesAsync();
     }
+
+    public async Task<bool> UserExistsAsync(string email)
+    {
+        return await _dbContext.Users.AnyAsync(u => u.Email == email);
+    }
+
+    public async Task CreateUserAsync(User user)
+    {
+        _dbContext.Users.Add(user);
+        await _dbContext.SaveChangesAsync();
+    }
 }

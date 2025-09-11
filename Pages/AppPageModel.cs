@@ -6,7 +6,7 @@ using System;
 using System.Threading.Tasks;
 using FantasyToolbox.Models; // Ensure this matches your actual models namespace
 
-// DbContext
+//DbContext
 public class ApplicationDbContext : DbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
@@ -18,11 +18,13 @@ public class ApplicationDbContext : DbContext
 
 public class AppPageModel : PageModel
 {
-    private readonly ApplicationDbContext _dbContext;
+    private readonly IEspnSessionService _espnSessionService;
+    //private readonly ApplicationDbContext _dbContext;
 
-    public AppPageModel(ApplicationDbContext dbContext)
+    public AppPageModel(IEspnSessionService espnSessionService)
     {
-        _dbContext = dbContext;
+        //_dbContext = dbContext;
+        _espnSessionService = espnSessionService;
     }
 
     public override void OnPageHandlerExecuting(Microsoft.AspNetCore.Mvc.Filters.PageHandlerExecutingContext context)
@@ -33,37 +35,38 @@ public class AppPageModel : PageModel
 
     protected async Task UpdateEspnConnectedSessionAsync()
     {
-        var userEmail = HttpContext.Session.GetString("UserEmail");
-        if (string.IsNullOrEmpty(userEmail))
-        {
-            HttpContext.Session.SetString("EspnConnected", "false");
-            return;
-        }
+        await _espnSessionService.UpdateEspnConnectedSessionAsync(HttpContext);
+        //var userEmail = HttpContext.Session.GetString("UserEmail");
+        //if (string.IsNullOrEmpty(userEmail))
+        //{
+        //    HttpContext.Session.SetString("EspnConnected", "false");
+        //    return;
+        //}
 
-        // Get user id from Users table
-        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
-        if (user == null)
-        {
-            HttpContext.Session.SetString("EspnConnected", "false");
-            return;
-        }
-        int userId = user.UserId;
+        //// Get user id from Users table
+        //var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+        //if (user == null)
+        //{
+        //    HttpContext.Session.SetString("EspnConnected", "false");
+        //    return;
+        //}
+        //int userId = user.UserId;
 
-        // Get ESPN Auth cookies
-        var auth = await _dbContext.EspnAuth.FirstOrDefaultAsync(a => a.UserId == userId);
-        string swid = auth?.Swid;
-        string espn_s2 = auth?.EspnS2;
+        //// Get ESPN Auth cookies
+        //var auth = await _dbContext.EspnAuth.FirstOrDefaultAsync(a => a.UserId == userId);
+        //string swid = auth?.Swid;
+        //string espn_s2 = auth?.EspnS2;
 
-        // Get League Data
-        var leagueData = await _dbContext.FLeagueData.FirstOrDefaultAsync(l => l.UserId == userId);
-        string leagueid = leagueData?.LeagueId;
-        int league_year = leagueData?.LeagueYear ?? 0;
+        //// Get League Data
+        //var leagueData = await _dbContext.FLeagueData.FirstOrDefaultAsync(l => l.UserId == userId);
+        //string leagueid = leagueData?.LeagueId;
+        //int league_year = leagueData?.LeagueYear ?? 0;
 
-        bool hasAuth = !string.IsNullOrEmpty(swid) && !string.IsNullOrEmpty(espn_s2);
-        bool hasLeague = !string.IsNullOrEmpty(leagueid) && league_year != 0;
-        bool isConnected = hasAuth && hasLeague;
+        //bool hasAuth = !string.IsNullOrEmpty(swid) && !string.IsNullOrEmpty(espn_s2);
+        //bool hasLeague = !string.IsNullOrEmpty(leagueid) && league_year != 0;
+        //bool isConnected = hasAuth && hasLeague;
 
-        HttpContext.Session.SetString("EspnConnected", isConnected ? "true" : "false");
+        //HttpContext.Session.SetString("EspnConnected", isConnected ? "true" : "false");
     }
 
     public static explicit operator AppPageModel(ConnectESPNModel v)
