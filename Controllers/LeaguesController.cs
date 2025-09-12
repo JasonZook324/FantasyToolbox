@@ -52,8 +52,8 @@ namespace FantasyToolbox.Controllers
                 // Paginate through waiver wire players
                 while (hasMoreData && allPlayers.Count < 300)
                 {
-                    // Add X-Fantasy-Filter header for enhanced filtering (single line to avoid HTTP header newline issues)
-                    var filterJson = $@"{{""players"":{{""filterStatus"":{{""value"":[""FREEAGENT"",""WAIVERS""]}},""filterSlotIds"":{{""value"":[1,2,3,4,5,16]}},""sortPercOwned"":{{""sortPriority"":1,""sortAsc"":false}},""limit"":{pageSize},""offset"":{offset}}}}}";
+                    // Add X-Fantasy-Filter header with correct ESPN slot IDs (QB=0, RB=2, WR=4, TE=6, K=17, DEF=16)
+                    var filterJson = $@"{{""players"":{{""filterStatus"":{{""value"":[""FREEAGENT"",""WAIVERS""]}},""filterSlotIds"":{{""value"":[0,2,4,6,17,16]}},""sortPercOwned"":{{""sortPriority"":1,""sortAsc"":false}},""limit"":{pageSize},""offset"":{offset}}}}}";
                     
                     var request = new HttpRequestMessage(HttpMethod.Get, $"{apiUrl}?view=kona_player_info");
                     request.Headers.Add("X-Fantasy-Filter", filterJson);
