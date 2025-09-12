@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.DataProtection;
+using FantasyToolbox.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,6 +68,7 @@ builder.Services.AddSession();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IESPNService, ESPNService>();
 builder.Services.AddScoped<ILogService, LogService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 var app = builder.Build();
 
 // Apply database migrations on startup
