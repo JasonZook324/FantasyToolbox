@@ -146,8 +146,8 @@ public class WaiverWireModel : AppPageModel
             throw new InvalidOperationException("ESPN authentication or league data not found.");
         }
 
-        // ESPN API call for waiver wire/free agents - using multiple view parameters to get full player pool
-        var apiUrl = $"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{leagueData.LeagueYear}/players?view=players_wl&view=kona_playercard&scoringPeriodId=0&size=1000";
+        // ESPN API call for waiver wire/free agents - get more players with expanded view
+        var apiUrl = $"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{leagueData.LeagueYear}/segments/0/leagues/{leagueData.LeagueId}?view=kona_player_info&view=players_wl&view=kona_playercard";
         
         httpClient.DefaultRequestHeaders.Add("Cookie", $"SWID={espnAuth.Swid}; espn_s2={espnAuth.EspnS2}");
         
