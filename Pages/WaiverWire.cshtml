@@ -30,12 +30,54 @@
                         <div class="input-group">
                             <select name="position" class="form-select" onchange="this.form.submit()">
                                 <option value="">All Positions</option>
-                                <option value="QB" @(Model.SelectedPosition == "QB" ? "selected" : "")>Quarterback (QB)</option>
-                                <option value="RB" @(Model.SelectedPosition == "RB" ? "selected" : "")>Running Back (RB)</option>
-                                <option value="WR" @(Model.SelectedPosition == "WR" ? "selected" : "")>Wide Receiver (WR)</option>
-                                <option value="TE" @(Model.SelectedPosition == "TE" ? "selected" : "")>Tight End (TE)</option>
-                                <option value="K" @(Model.SelectedPosition == "K" ? "selected" : "")>Kicker (K)</option>
-                                <option value="D/ST" @(Model.SelectedPosition == "D/ST" ? "selected" : "")>Defense/Special Teams (D/ST)</option>
+                                @if (Model.SelectedPosition == "QB")
+                                {
+                                    <option value="QB" selected>Quarterback (QB)</option>
+                                }
+                                else
+                                {
+                                    <option value="QB">Quarterback (QB)</option>
+                                }
+                                @if (Model.SelectedPosition == "RB")
+                                {
+                                    <option value="RB" selected>Running Back (RB)</option>
+                                }
+                                else
+                                {
+                                    <option value="RB">Running Back (RB)</option>
+                                }
+                                @if (Model.SelectedPosition == "WR")
+                                {
+                                    <option value="WR" selected>Wide Receiver (WR)</option>
+                                }
+                                else
+                                {
+                                    <option value="WR">Wide Receiver (WR)</option>
+                                }
+                                @if (Model.SelectedPosition == "TE")
+                                {
+                                    <option value="TE" selected>Tight End (TE)</option>
+                                }
+                                else
+                                {
+                                    <option value="TE">Tight End (TE)</option>
+                                }
+                                @if (Model.SelectedPosition == "K")
+                                {
+                                    <option value="K" selected>Kicker (K)</option>
+                                }
+                                else
+                                {
+                                    <option value="K">Kicker (K)</option>
+                                }
+                                @if (Model.SelectedPosition == "D/ST")
+                                {
+                                    <option value="D/ST" selected>Defense/Special Teams (D/ST)</option>
+                                }
+                                else
+                                {
+                                    <option value="D/ST">Defense/Special Teams (D/ST)</option>
+                                }
                             </select>
                             <button type="submit" class="btn btn-primary">Filter</button>
                         </div>
