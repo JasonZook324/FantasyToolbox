@@ -21,11 +21,11 @@ namespace FantasyToolbox.Controllers
         {
             try
             {
-                // Get the authenticated user (simplified for now)
-                var userRecord = await _context.Users.FirstOrDefaultAsync(u => u.Email == "defaultuser@fantasy.com");
+                // Get any available user for testing (first active user in database)
+                var userRecord = await _context.Users.FirstOrDefaultAsync(u => u.IsActive);
                 if (userRecord == null)
                 {
-                    return BadRequest("User not found");
+                    return BadRequest("No active users found in database");
                 }
 
                 // Get ESPN auth and league data
@@ -65,10 +65,8 @@ namespace FantasyToolbox.Controllers
                     
                     var request = new HttpRequestMessage(HttpMethod.Get, $"{apiUrl}?view=kona_player_info");
                     request.Headers.Add("X-Fantasy-Filter", filterJson);
-                    foreach (var header in httpClient.DefaultRequestHeaders)
-                    {
-                        request.Headers.Add(header.Key, header.Value);
-                    }
+                    request.Headers.Add("Cookie", $"SWID={espnAuth.Swid}; espn_s2={espnAuth.EspnS2}");
+                    // Don't copy default headers to avoid duplicate Cookie header
 
                     var response = await httpClient.SendAsync(request);
                     if (!response.IsSuccessStatusCode)
