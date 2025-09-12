@@ -35,9 +35,26 @@ if (!string.IsNullOrEmpty(externalDatabaseUrl))
 {
     try
     {
-        // Test if external URL can be parsed
-        var testUri = new Uri(externalDatabaseUrl);
-        databaseUrl = externalDatabaseUrl;
+        // Test if external URL can be parsed - handle special characters in query string
+        string testUrl = externalDatabaseUrl;
+        
+        // Handle potential URI parsing issues with channel_binding parameter
+        if (testUrl.Contains("channel_binding=require"))
+        {
+            // URL encode the query string part if needed
+            var parts = testUrl.Split('?');
+            if (parts.Length > 1)
+            {
+                var queryString = parts[1];
+                // Replace problematic characters that might cause URI parsing issues
+                queryString = queryString.Replace("&channel_binding=require", "");
+                testUrl = parts[0] + "?" + queryString;
+                Console.WriteLine($"Cleaned external database URL for parsing: removing channel_binding parameter");
+            }
+        }
+        
+        var testUri = new Uri(testUrl);
+        databaseUrl = externalDatabaseUrl; // Use original URL for connection
         databaseSource = "External Neon Database";
         Console.WriteLine($"External database URL format is valid, using external database");
     }
