@@ -93,8 +93,8 @@ if (!string.IsNullOrEmpty(databaseUrl))
             sslMode = queryParams["sslmode"] ?? "require";
         }
         
-        // Build proper Npgsql connection string with connection pooling and timeout settings
-        connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode={sslMode};Connection Idle Lifetime=30;Maximum Pool Size=10;Minimum Pool Size=1;Timeout=15;Command Timeout=30;";
+        // Build proper Npgsql connection string with connection pooling, timeout settings, and force public schema
+        connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode={sslMode};Search Path=public;Connection Idle Lifetime=30;Maximum Pool Size=10;Minimum Pool Size=1;Timeout=15;Command Timeout=30;";
         
         Console.WriteLine($"Using {databaseSource} - Parsed connection string: Host={host}, Port={port}, Database={database}, Username={username}, SSL Mode={sslMode}");
     }
@@ -174,6 +174,49 @@ try
         // Apply pending migrations
         context.Database.Migrate();
         Console.WriteLine("Database migrations applied successfully.");
+        
+        // Add database verification diagnostics
+        try
+        {
+            using var connection = context.Database.GetDbConnection();
+            await connection.OpenAsync();
+            
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = "SELECT current_database(), current_schema();";
+            using var reader = await cmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                Console.WriteLine($"✅ Connected to DATABASE: {reader.GetString(0)}, SCHEMA: {reader.GetString(1)}");
+            }
+            reader.Close();
+            
+            // Verify Users table and EmailVerified column exist
+            cmd.CommandText = @"SELECT column_name FROM information_schema.columns 
+                               WHERE table_schema='public' AND table_name='Users' 
+                               ORDER BY ordinal_position;";
+            using var colReader = await cmd.ExecuteReaderAsync();
+            var columns = new List<string>();
+            while (await colReader.ReadAsync())
+            {
+                columns.Add(colReader.GetString(0));
+            }
+            Console.WriteLine($"✅ Users table columns: {string.Join(", ", columns)}");
+            
+            if (columns.Contains("EmailVerified"))
+            {
+                Console.WriteLine("✅ EmailVerified column EXISTS - registration should work!");
+            }
+            else
+            {
+                Console.WriteLine("❌ EmailVerified column MISSING - this will cause registration errors!");
+            }
+            
+            await connection.CloseAsync();
+        }
+        catch (Exception diagEx)
+        {
+            Console.WriteLine($"⚠️ Database diagnostics failed: {diagEx.Message}");
+        }
     }
     else
     {

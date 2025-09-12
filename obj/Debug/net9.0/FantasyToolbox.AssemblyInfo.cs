@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("FantasyToolbox")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+85edb2c0a81daa4f50833bc8053b6872baecfbfe")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b386a279c6669c9f524ec65b3b8fa2e4962e3bdc")]
 [assembly: System.Reflection.AssemblyProductAttribute("FantasyToolbox")]
 [assembly: System.Reflection.AssemblyTitleAttribute("FantasyToolbox")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
