@@ -48,8 +48,8 @@ if (!string.IsNullOrEmpty(databaseUrl))
             sslMode = queryParams["sslmode"] ?? "require";
         }
         
-        // Build proper Npgsql connection string
-        connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode={sslMode};";
+        // Build proper Npgsql connection string with connection pooling and timeout settings
+        connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode={sslMode};Connection Idle Lifetime=30;Maximum Pool Size=10;Minimum Pool Size=1;Timeout=15;Command Timeout=30;";
         
         Console.WriteLine($"Parsed connection string: Host={host}, Port={port}, Database={database}, Username={username}, SSL Mode={sslMode}");
     }
@@ -70,9 +70,15 @@ else
     }
 }
 
-// Add DbContext for Identity
+// Add DbContext for Identity with retry logic for transient failures
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(connectionString, npgsqlOptions =>
+    {
+        npgsqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorCodesToAdd: null);
+    }));
 
 // Add distributed memory cache for sessions
 builder.Services.AddDistributedMemoryCache();
