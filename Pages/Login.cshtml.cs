@@ -130,7 +130,7 @@ public class LoginModel : PageModel
                 ExpiresUtc = RememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(1)
             };
 
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
+            await HttpContext.SignInAsync(IdentityConstants.ApplicationScheme, principal, authProperties);
             
             // Log successful login and redirect
             await _logger.LogAsync($"Successful login for email: {user.Email}", "Info");
