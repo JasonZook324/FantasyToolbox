@@ -22,13 +22,33 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 });
 
 // Get connection string from environment variable for security (Replit provides DATABASE_URL)
-var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ??
-                      Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") ??
-                      builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
 
 if (string.IsNullOrEmpty(connectionString))
 {
-    throw new InvalidOperationException("Database connection string not found. Please set DB_CONNECTION_STRING environment variable or configure DefaultConnection in appsettings.json.");
+    connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") ??
+                      builder.Configuration.GetConnectionString("DefaultConnection");
+}
+
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new InvalidOperationException("Database connection string not found. Please set DATABASE_URL environment variable or configure DefaultConnection in appsettings.json.");
+}
+
+// Ensure connection string is properly formatted
+Console.WriteLine($"Using connection string: {connectionString?.Substring(0, Math.Min(50, connectionString.Length))}...");
+
+// Validate connection string format
+if (!connectionString.Contains("sslmode="))
+{
+    if (connectionString.Contains("sslmode"))
+    {
+        connectionString = connectionString.Replace("?sslmode", "?sslmode=require");
+    }
+    else
+    {
+        connectionString += connectionString.Contains("?") ? "&sslmode=require" : "?sslmode=require";
+    }
 }
 
 // Add DbContext for Identity
