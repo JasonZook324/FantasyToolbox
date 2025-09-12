@@ -146,24 +146,10 @@ public class WaiverWireModel : AppPageModel
             throw new InvalidOperationException("ESPN authentication or league data not found.");
         }
 
-        // ESPN API call for waiver wire/free agents - use X-Fantasy-Filter for pagination
+        // ESPN API call for waiver wire/free agents - stable working configuration
         var apiUrl = $"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{leagueData.LeagueYear}/segments/0/leagues/{leagueData.LeagueId}?view=kona_player_info";
         
         httpClient.DefaultRequestHeaders.Add("Cookie", $"SWID={espnAuth.Swid}; espn_s2={espnAuth.EspnS2}");
-        
-        // Add X-Fantasy-Filter header for free agents with pagination
-        var filterJson = """
-        {
-            "players": {
-                "filterStatus": {"value": ["FREEAGENT","WAIVERS"]},
-                "filterSlotIds": {"value": [1,2,3,4,5,16]},
-                "sortPercOwned": {"sortPriority": 1, "sortAsc": false},
-                "limit": 100,
-                "offset": 0
-            }
-        }
-        """;
-        httpClient.DefaultRequestHeaders.Add("X-Fantasy-Filter", filterJson);
         
         var response = await httpClient.GetAsync(apiUrl);
         
