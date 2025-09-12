@@ -16,6 +16,9 @@ namespace FantasyToolbox.Models
         [Required]
         public string PasswordHash { get; set; }
         public bool IsActive { get; set; }
+        public bool EmailVerified { get; set; } = false;
+        public string? VerificationCode { get; set; }
+        public DateTime? VerificationCodeExpires { get; set; }
         public DateTime? LastLogin { get; set; }
         public int? SelectedTeamId { get; set; }
     }
