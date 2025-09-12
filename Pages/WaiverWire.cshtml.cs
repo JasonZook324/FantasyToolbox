@@ -146,7 +146,41 @@ public class WaiverWireModel : AppPageModel
             throw new InvalidOperationException("ESPN authentication or league data not found.");
         }
 
-        // ESPN API call for waiver wire/free agents - stable working configuration
+        // Use the new enhanced API endpoint that can get hundreds of players
+        var apiUrl = $"http://localhost:5000/api/leagues/{leagueData.LeagueId}/waiver-wire?userId=default-user";
+        
+        var response = await httpClient.GetAsync(apiUrl);
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            // Fallback to original ESPN API if new endpoint fails
+            await FetchWaiverWireDataDirectAsync(userId);
+            return;
+        }
+
+        var jsonContent = await response.Content.ReadAsStringAsync();
+        
+        // Debug: Log the API URL and response size for troubleshooting
+        await _logger.LogAsync($"Enhanced API URL: {apiUrl}", "Debug", "");
+        await _logger.LogAsync($"Enhanced API Response Length: {jsonContent.Length} characters", "Debug", "");
+        
+        await ParseEnhancedWaiverWireData(jsonContent);
+    }
+
+    private async Task FetchWaiverWireDataDirectAsync(int userId)
+    {
+        using var httpClient = new HttpClient();
+        
+        // Get ESPN auth data from database
+        var espnAuth = await GetEspnAuthAsync(userId);
+        var leagueData = await GetLeagueDataAsync(userId);
+        
+        if (espnAuth == null || leagueData == null)
+        {
+            throw new InvalidOperationException("ESPN authentication or league data not found.");
+        }
+
+        // Fallback ESPN API call for waiver wire/free agents - stable working configuration
         var apiUrl = $"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{leagueData.LeagueYear}/segments/0/leagues/{leagueData.LeagueId}?view=kona_player_info";
         
         httpClient.DefaultRequestHeaders.Add("Cookie", $"SWID={espnAuth.Swid}; espn_s2={espnAuth.EspnS2}");
@@ -161,10 +195,108 @@ public class WaiverWireModel : AppPageModel
         var jsonContent = await response.Content.ReadAsStringAsync();
         
         // Debug: Log the API URL and response size for troubleshooting
-        await _logger.LogAsync($"ESPN API URL: {apiUrl}", "Debug", "");
-        await _logger.LogAsync($"ESPN API Response Length: {jsonContent.Length} characters", "Debug", "");
+        await _logger.LogAsync($"Fallback ESPN API URL: {apiUrl}", "Debug", "");
+        await _logger.LogAsync($"Fallback ESPN API Response Length: {jsonContent.Length} characters", "Debug", "");
         
         await ParseWaiverWireData(jsonContent);
+    }
+
+    private async Task ParseEnhancedWaiverWireData(string jsonContent)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(jsonContent);
+            var players = new List<WaiverWirePlayer>();
+            
+            if (doc.RootElement.TryGetProperty("players", out var playersArray))
+            {
+                int index = 0;
+                foreach (var playerElement in playersArray.EnumerateArray())
+                {
+                    try
+                    {
+                        var player = new WaiverWirePlayer();
+
+                        if (playerElement.TryGetProperty("id", out var playerId))
+                            player.PlayerId = playerId.GetInt32();
+
+                        if (playerElement.TryGetProperty("player", out var playerInfo))
+                        {
+                            if (playerInfo.TryGetProperty("fullName", out var fullName))
+                                player.FullName = fullName.GetString() ?? "";
+
+                            if (playerInfo.TryGetProperty("defaultPositionId", out var positionId))
+                            {
+                                player.Position = MapPositionId(positionId.GetInt32());
+                            }
+
+                            if (playerInfo.TryGetProperty("proTeamId", out var proTeamId))
+                            {
+                                player.ProTeam = MapProTeamId(proTeamId.GetInt32());
+                            }
+
+                            if (playerInfo.TryGetProperty("ownership", out var ownership))
+                            {
+                                if (ownership.TryGetProperty("percentOwned", out var percentOwned))
+                                    player.OwnershipPercentage = Math.Round(percentOwned.GetDouble(), 1);
+                            }
+
+                            if (playerInfo.TryGetProperty("stats", out var stats))
+                            {
+                                // Get current season fantasy points and projected points
+                                foreach (var statElement in stats.EnumerateArray())
+                                {
+                                    if (statElement.TryGetProperty("seasonId", out var seasonId) && 
+                                        statElement.TryGetProperty("statSourceId", out var statSourceId))
+                                    {
+                                        // Check for projected points (statSourceId = 1)
+                                        if (statSourceId.GetInt32() == 1)
+                                        {
+                                            if (statElement.TryGetProperty("appliedTotal", out var projectedTotal))
+                                                player.ProjectedPoints = Math.Round(projectedTotal.GetDouble(), 1);
+                                        }
+                                        
+                                        // Check for current season points (statSourceId = 0)
+                                        if (statSourceId.GetInt32() == 0)
+                                        {
+                                            if (statElement.TryGetProperty("appliedTotal", out var seasonTotal))
+                                                player.FantasyPoints = Math.Round(seasonTotal.GetDouble(), 1);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        player.Rank = index + 1;
+                        players.Add(player);
+                        index++;
+                    }
+                    catch (Exception ex)
+                    {
+                        await _logger.LogAsync($"Error parsing individual player: {ex.Message}", "Warning", "");
+                        continue;
+                    }
+                }
+            }
+
+            // Sort players by ownership percentage (highest first) and then assign rank
+            WaiverWirePlayers = players
+                .OrderByDescending(p => p.OwnershipPercentage)
+                .ThenByDescending(p => p.ProjectedPoints)
+                .Select((player, index) =>
+                {
+                    player.Rank = index + 1;
+                    return player;
+                })
+                .ToList();
+
+            await _logger.LogAsync($"Enhanced Waiver Wire Data Loaded: {WaiverWirePlayers.Count} players found", "Info", "");
+        }
+        catch (Exception ex)
+        {
+            await _logger.LogAsync($"Error parsing enhanced waiver wire JSON: {ex.Message}", "Error", ex.ToString());
+            throw;
+        }
     }
 
     private async Task ParseWaiverWireData(string jsonContent)
