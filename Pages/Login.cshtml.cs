@@ -41,10 +41,17 @@ public class LoginModel : PageModel
         public string Password { get; set; }
     }
 
-    public IActionResult OnGet()
+    public IActionResult OnGet(string? message = null)
     {
         var userEmail = HttpContext.Session.GetString("UserEmail");
         RememberMe = true;
+        
+        // Display message from redirects (like from Dashboard authentication failures)
+        if (!string.IsNullOrEmpty(message))
+        {
+            Message = message;
+        }
+        
         if (!string.IsNullOrEmpty(userEmail))
         {
             return RedirectToPage("/Dashboard");
