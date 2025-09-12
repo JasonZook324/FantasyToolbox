@@ -171,6 +171,7 @@ catch (Exception ex)
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+builder.Services.AddControllers(); // Add API controllers support
 builder.Services.AddSession();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IESPNService, ESPNService>();
@@ -224,6 +225,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseSession();
 
+app.MapControllers(); // Map API controllers
 app.MapStaticAssets();
 app.MapRazorPages()
    .WithStaticAssets();
