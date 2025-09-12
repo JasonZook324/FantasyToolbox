@@ -21,10 +21,38 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
-// Get connection string from environment variable for security (Replit provides DATABASE_URL)
-var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+// Get connection string from environment variable for security 
+// Check for external database first, then fallback to Replit's managed database
+var externalDatabaseUrl = Environment.GetEnvironmentVariable("EXTERNAL_DATABASE_URL");
+var replitDatabaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
 string connectionString;
+string databaseUrl = null;
+string databaseSource = "Unknown";
+
+// Try external database first if provided
+if (!string.IsNullOrEmpty(externalDatabaseUrl))
+{
+    try
+    {
+        // Test if external URL can be parsed
+        var testUri = new Uri(externalDatabaseUrl);
+        databaseUrl = externalDatabaseUrl;
+        databaseSource = "External Neon Database";
+        Console.WriteLine($"External database URL format is valid, using external database");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"External database URL format invalid ({ex.Message}), falling back to Replit managed database");
+        databaseUrl = replitDatabaseUrl;
+        databaseSource = "Replit Managed Database";
+    }
+}
+else
+{
+    databaseUrl = replitDatabaseUrl;
+    databaseSource = "Replit Managed Database";
+}
 
 if (!string.IsNullOrEmpty(databaseUrl))
 {
@@ -51,12 +79,12 @@ if (!string.IsNullOrEmpty(databaseUrl))
         // Build proper Npgsql connection string with connection pooling and timeout settings
         connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode={sslMode};Connection Idle Lifetime=30;Maximum Pool Size=10;Minimum Pool Size=1;Timeout=15;Command Timeout=30;";
         
-        Console.WriteLine($"Parsed connection string: Host={host}, Port={port}, Database={database}, Username={username}, SSL Mode={sslMode}");
+        Console.WriteLine($"Using {databaseSource} - Parsed connection string: Host={host}, Port={port}, Database={database}, Username={username}, SSL Mode={sslMode}");
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Error parsing DATABASE_URL: {ex.Message}");
-        throw new InvalidOperationException($"Invalid DATABASE_URL format: {ex.Message}");
+        Console.WriteLine($"Error parsing database URL: {ex.Message}");
+        throw new InvalidOperationException($"Invalid database URL format: {ex.Message}");
     }
 }
 else
