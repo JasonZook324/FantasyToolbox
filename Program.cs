@@ -149,9 +149,25 @@ builder.Services.Configure<CookiePolicyOptions>(options => {
     options.Secure = CookieSecurePolicy.Always;
 });
 
-// Configure data protection for persistent keys
-builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "DataProtectionKeys")));
+// Configure data protection for persistent keys with robust error handling
+try 
+{
+    var keysPath = Path.Combine(Directory.GetCurrentDirectory(), "DataProtectionKeys");
+    var keysDir = new DirectoryInfo(keysPath);
+    if (!keysDir.Exists) keysDir.Create();
+    
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(keysDir)
+        .SetApplicationName("FantasyToolbox")
+        .SetDefaultKeyLifetime(TimeSpan.FromDays(90)); // Keys last 90 days
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Warning: Could not configure persistent data protection keys: {ex.Message}");
+    // Fallback to ephemeral keys if filesystem fails
+    builder.Services.AddDataProtection()
+        .SetApplicationName("FantasyToolbox");
+}
 
 // Add services to the container.
 builder.Services.AddRazorPages();
