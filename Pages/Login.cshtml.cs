@@ -67,64 +67,64 @@ public class LoginModel : PageModel
             return Page();
         }
 
-        var user = await _userService.GetUserByEmailAsync(Input.Email);
-        if (user == null)
-        {
-            Message = "Login is invalid.";
-            _logger.LogAsync($"Failed login attempt for email: {Input.Email}").GetAwaiter().GetResult();
-            return Page();
-        }
-
-        if (!user.IsActive)
-        {
-            Message = "Account is inactive. Please contact support.";
-            _logger.LogAsync($"Inactive account login attempt for email: {Input.Email}").GetAwaiter().GetResult();
-            return Page();
-        }
-
-        var hasher = new PasswordHasher<string>();
-        var result = hasher.VerifyHashedPassword(null, user.PasswordHash, Input.Password);
-
-        if (result != PasswordVerificationResult.Success)
-        {
-            Message = "Login is invalid.";
-            _logger.LogAsync($"Failed login attempt for email: {Input.Email}").GetAwaiter().GetResult();
-            return Page();
-        }
-
-        // Check if email is verified
-        if (!user.EmailVerified)
-        {
-            Message = "Please verify your email address before logging in. Check your inbox for a verification code.";
-            _logger.LogAsync($"Login attempt with unverified email: {Input.Email}").GetAwaiter().GetResult();
-            return RedirectToPage("/VerifyEmail", new { email = user.Email });
-        }
-
-        await _userService.UpdateLastLoginAsync(user);
-
-        HttpContext.Session.SetString("UserEmail", user.Email);
-        HttpContext.Session.SetString("FirstName", user.FirstName ?? "");
-        HttpContext.Session.SetString("LastName", user.LastName ?? "");
-
-        var claims = new[] { new Claim(ClaimTypes.Name, user.Email) };
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        var principal = new ClaimsPrincipal(identity);
-        var authProperties = new AuthenticationProperties
-        {
-            IsPersistent = RememberMe,
-            ExpiresUtc = RememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(1)
-        };
-
         try
         {
+            var user = await _userService.GetUserByEmailAsync(Input.Email);
+            if (user == null)
+            {
+                Message = "Login is invalid.";
+                _logger.LogAsync($"Failed login attempt for email: {Input.Email}").GetAwaiter().GetResult();
+                return Page();
+            }
+
+            if (!user.IsActive)
+            {
+                Message = "Account is inactive. Please contact support.";
+                _logger.LogAsync($"Inactive account login attempt for email: {Input.Email}").GetAwaiter().GetResult();
+                return Page();
+            }
+
+            var hasher = new PasswordHasher<string>();
+            var result = hasher.VerifyHashedPassword(null, user.PasswordHash, Input.Password);
+
+            if (result != PasswordVerificationResult.Success)
+            {
+                Message = "Login is invalid.";
+                _logger.LogAsync($"Failed login attempt for email: {Input.Email}").GetAwaiter().GetResult();
+                return Page();
+            }
+
+            // Check if email is verified
+            if (!user.EmailVerified)
+            {
+                Message = "Please verify your email address before logging in. Check your inbox for a verification code.";
+                _logger.LogAsync($"Login attempt with unverified email: {Input.Email}").GetAwaiter().GetResult();
+                return RedirectToPage("/VerifyEmail", new { email = user.Email });
+            }
+
+            await _userService.UpdateLastLoginAsync(user);
+
+            HttpContext.Session.SetString("UserEmail", user.Email);
+            HttpContext.Session.SetString("FirstName", user.FirstName ?? "");
+            HttpContext.Session.SetString("LastName", user.LastName ?? "");
+
+            var claims = new[] { new Claim(ClaimTypes.Name, user.Email) };
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = RememberMe,
+                ExpiresUtc = RememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(1)
+            };
+
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
             Message = "Login successful!";
             return RedirectToPage("/Dashboard");
         }
         catch (Exception ex)
         {
-            Message = "An error occurred during login. Please try again.";
-            await _logger.LogAsync($"Error during login for email: {Input.Email}. Exception: {ex.Message}", "Error", ex.ToString());
+            Message = "Database connection issue. Please try again in a moment.";
+            await _logger.LogAsync($"Database error during login for email: {Input.Email}. Exception: {ex.Message}", "Error", ex.ToString());
             return Page();
         }
 
