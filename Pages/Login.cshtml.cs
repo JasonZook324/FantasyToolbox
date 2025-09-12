@@ -85,6 +85,14 @@ public class LoginModel : PageModel
             return Page();
         }
 
+        // Check if email is verified
+        if (!user.EmailVerified)
+        {
+            Message = "Please verify your email address before logging in. Check your inbox for a verification code.";
+            _logger.LogAsync($"Login attempt with unverified email: {Input.Email}").GetAwaiter().GetResult();
+            return RedirectToPage("/VerifyEmail", new { email = user.Email });
+        }
+
         await _userService.UpdateLastLoginAsync(user);
 
         HttpContext.Session.SetString("UserEmail", user.Email);

@@ -26,7 +26,7 @@ public class UserService : IUserService
 
     public async Task<bool> UserExistsAsync(string email)
     {
-        return await _dbContext.Users.AnyAsync(u => u.Email == email);
+        return await _dbContext.Users.AnyAsync(u => u.Email == email.ToLowerInvariant().Trim());
     }
 
     public async Task CreateUserAsync(User user)
@@ -37,6 +37,12 @@ public class UserService : IUserService
 
     public async Task<string> GenerateVerificationCodeAsync(User user)
     {
+        // Check resend rate limiting (security)
+        if (user.LastResendTime != null && user.LastResendTime.Value.AddMinutes(1) > DateTime.UtcNow)
+        {
+            throw new InvalidOperationException("Please wait before requesting a new verification code.");
+        }
+        
         // Generate a 6-digit verification code
         using var rng = RandomNumberGenerator.Create();
         var bytes = new byte[4];
@@ -46,6 +52,8 @@ public class UserService : IUserService
         // Set verification code and expiration (15 minutes)
         user.VerificationCode = code;
         user.VerificationCodeExpires = DateTime.UtcNow.AddMinutes(15);
+        user.LastResendTime = DateTime.UtcNow;
+        user.VerificationAttempts = 0; // Reset attempts when new code is generated
         
         _dbContext.Users.Update(user);
         await _dbContext.SaveChangesAsync();
@@ -57,14 +65,43 @@ public class UserService : IUserService
     {
         var user = await GetUserByEmailAsync(email);
         
-        if (user == null || 
-            user.VerificationCode != verificationCode || 
-            user.VerificationCodeExpires == null || 
-            user.VerificationCodeExpires < DateTime.UtcNow)
+        if (user == null)
         {
             return false;
         }
         
+        // Check for too many attempts (security)
+        if (user.VerificationAttempts >= 5)
+        {
+            var lockoutExpiry = user.LastVerificationAttempt?.AddMinutes(15);
+            if (lockoutExpiry > DateTime.UtcNow)
+            {
+                return false; // Still locked out
+            }
+            else
+            {
+                // Reset attempts after lockout period
+                user.VerificationAttempts = 0;
+            }
+        }
+        
+        // Increment attempt count
+        user.VerificationAttempts++;
+        user.LastVerificationAttempt = DateTime.UtcNow;
+        
+        if (user.VerificationCode != verificationCode || 
+            user.VerificationCodeExpires == null || 
+            user.VerificationCodeExpires < DateTime.UtcNow)
+        {
+            _dbContext.Users.Update(user);
+            await _dbContext.SaveChangesAsync();
+            return false;
+        }
+        
+        // Success - reset attempts
+        user.VerificationAttempts = 0;
+        _dbContext.Users.Update(user);
+        await _dbContext.SaveChangesAsync();
         return true;
     }
 
@@ -76,5 +113,15 @@ public class UserService : IUserService
         
         _dbContext.Users.Update(user);
         await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<bool> CanResendVerificationCodeAsync(User user)
+    {
+        // Check if user can request a new verification code (rate limiting)
+        if (user.LastResendTime != null && user.LastResendTime.Value.AddMinutes(1) > DateTime.UtcNow)
+        {
+            return false;
+        }
+        return true;
     }
 }

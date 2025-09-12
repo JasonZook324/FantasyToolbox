@@ -3,16 +3,19 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
+using FantasyToolbox.Services;
 
 public class RegisterModel : PageModel
 {
     private readonly IUserService _userService;
     private readonly ILogService _logger;
+    private readonly IEmailService _emailService;
 
-    public RegisterModel(IUserService userService, ILogService logger)
+    public RegisterModel(IUserService userService, ILogService logger, IEmailService emailService)
     {
         _userService = userService;
         _logger = logger;
+        _emailService = emailService;
     }
 
     [BindProperty]
@@ -67,16 +70,18 @@ public class RegisterModel : PageModel
         try
         {
             var exists = await _userService.UserExistsAsync(email);
+            if (exists)
+            {
+                Message = "An account with this email already exists.";
+                return Page();
+            }
         }
         catch (Exception ex) 
         {
             _logger.LogAsync("Error checking user existence: " + ex.Message, "Error", ex.StackTrace).GetAwaiter().GetResult();
-            Message = "Account already exists or invalid input.";
+            Message = "Error creating account. Please try again.";
             return Page();
         }
-
-        
-       
 
         var hasher = new PasswordHasher<string>();
         var hashedPassword = hasher.HashPassword(null, Input.Password);
@@ -87,19 +92,34 @@ public class RegisterModel : PageModel
             LastName = Input.LastName.Trim(),
             Email = email,
             PasswordHash = hashedPassword,
-            IsActive = true
+            IsActive = true,
+            EmailVerified = false
         };
 
         try
         {
             await _userService.CreateUserAsync(user);
-            Message = "Account created. Please log in.";
-            return RedirectToPage("/Login");
+            
+            // Generate and send verification code
+            var verificationCode = await _userService.GenerateVerificationCodeAsync(user);
+            var emailSent = await _emailService.SendVerificationEmailAsync(email, user.FirstName, verificationCode);
+            
+            if (emailSent)
+            {
+                Message = "Account created! Please check your email for a verification code.";
+                return RedirectToPage("/VerifyEmail", new { email = email });
+            }
+            else
+            {
+                Message = "Account created, but there was an issue sending the verification email. Please contact support.";
+                await _logger.LogAsync($"Failed to send verification email to {email}", "Warning");
+                return Page();
+            }
         } catch (Exception ex) 
         {
             _logger.LogAsync("Error creating user: " + ex.Message, "Error", ex.Message).GetAwaiter().GetResult();
-            Message = "Error creating account. Please try again." + ex.Message;
-            
+            Message = "Error creating account. Please try again.";
+            return Page();
         }
         return Page();
     }

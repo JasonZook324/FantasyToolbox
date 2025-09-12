@@ -22,6 +22,12 @@ public class User
     public string PasswordHash { get; set; }
 
     public bool IsActive { get; set; } = true;
+    public bool EmailVerified { get; set; } = false;
+    public string? VerificationCode { get; set; }
+    public DateTime? VerificationCodeExpires { get; set; }
+    public int VerificationAttempts { get; set; } = 0;
+    public DateTime? LastVerificationAttempt { get; set; }
+    public DateTime? LastResendTime { get; set; }
 
     public DateTime? LastLogin { get; set; }
 

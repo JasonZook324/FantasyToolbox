@@ -9,4 +9,5 @@ public interface IUserService
     Task<string> GenerateVerificationCodeAsync(User user);
     Task<bool> VerifyEmailCodeAsync(string email, string verificationCode);
     Task SetEmailVerifiedAsync(User user);
+    Task<bool> CanResendVerificationCodeAsync(User user);
 }

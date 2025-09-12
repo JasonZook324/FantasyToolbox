@@ -568,3 +568,5 @@ C:/Users/64515C/source/repos/LEARNING/FantasyToolbox/obj/Debug/net9.0/staticweba
 /home/runner/workspace/obj/Debug/net9.0/compressed/a3ygkwa5zy-2z0ns9nrw6.gz
 /home/runner/workspace/obj/Debug/net9.0/compressed/nezrqnk58p-muycvpuwrr.gz
 /home/runner/workspace/obj/Debug/net9.0/compressed/v0zgfp0y55-87fc7y1x7t.gz
+/home/runner/workspace/bin/Debug/net9.0/SendGrid.dll
+/home/runner/workspace/bin/Debug/net9.0/StarkbankEcdsa.dll
