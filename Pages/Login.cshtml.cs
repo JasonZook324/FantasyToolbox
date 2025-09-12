@@ -67,9 +67,12 @@ public class LoginModel : PageModel
             return Page();
         }
 
+        User? user = null;
+        
+        // Database operations
         try
         {
-            var user = await _userService.GetUserByEmailAsync(Input.Email);
+            user = await _userService.GetUserByEmailAsync(Input.Email);
             if (user == null)
             {
                 Message = "Login is invalid.";
@@ -103,7 +106,17 @@ public class LoginModel : PageModel
             }
 
             await _userService.UpdateLastLoginAsync(user);
+        }
+        catch (Exception ex)
+        {
+            Message = "Database connection issue. Please try again in a moment.";
+            await _logger.LogAsync($"Database error during login for email: {Input.Email}. Exception: {ex.Message}", "Error", ex.ToString());
+            return Page();
+        }
 
+        // Session and authentication setup
+        try
+        {
             HttpContext.Session.SetString("UserEmail", user.Email);
             HttpContext.Session.SetString("FirstName", user.FirstName ?? "");
             HttpContext.Session.SetString("LastName", user.LastName ?? "");
@@ -118,13 +131,15 @@ public class LoginModel : PageModel
             };
 
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
-            Message = "Login successful!";
+            
+            // Log successful login and redirect
+            await _logger.LogAsync($"Successful login for email: {user.Email}", "Info");
             return RedirectToPage("/Dashboard");
         }
         catch (Exception ex)
         {
-            Message = "Database connection issue. Please try again in a moment.";
-            await _logger.LogAsync($"Database error during login for email: {Input.Email}. Exception: {ex.Message}", "Error", ex.ToString());
+            Message = "Authentication system issue. Please try logging in again.";
+            await _logger.LogAsync($"Authentication error during login for email: {user.Email}. Exception: {ex.Message}", "Error", ex.ToString());
             return Page();
         }
 
