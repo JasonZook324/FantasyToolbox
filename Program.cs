@@ -22,32 +22,51 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 });
 
 // Get connection string from environment variable for security (Replit provides DATABASE_URL)
-var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
-if (string.IsNullOrEmpty(connectionString))
+string connectionString;
+
+if (!string.IsNullOrEmpty(databaseUrl))
+{
+    // Parse DATABASE_URL format and convert to Npgsql connection string format
+    // DATABASE_URL format: postgresql://user:password@host:port/database?sslmode=require
+    try
+    {
+        var uri = new Uri(databaseUrl);
+        var host = uri.Host;
+        var port = uri.Port > 0 ? uri.Port : 5432; // Default PostgreSQL port if not specified
+        var database = uri.AbsolutePath.TrimStart('/');
+        var userInfo = uri.UserInfo.Split(':');
+        var username = userInfo[0];
+        var password = userInfo.Length > 1 ? userInfo[1] : "";
+        
+        // Extract SSL mode from query string
+        var sslMode = "require"; // default
+        if (!string.IsNullOrEmpty(uri.Query))
+        {
+            var queryParams = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            sslMode = queryParams["sslmode"] ?? "require";
+        }
+        
+        // Build proper Npgsql connection string
+        connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode={sslMode};";
+        
+        Console.WriteLine($"Parsed connection string: Host={host}, Port={port}, Database={database}, Username={username}, SSL Mode={sslMode}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error parsing DATABASE_URL: {ex.Message}");
+        throw new InvalidOperationException($"Invalid DATABASE_URL format: {ex.Message}");
+    }
+}
+else
 {
     connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") ??
                       builder.Configuration.GetConnectionString("DefaultConnection");
-}
-
-if (string.IsNullOrEmpty(connectionString))
-{
-    throw new InvalidOperationException("Database connection string not found. Please set DATABASE_URL environment variable or configure DefaultConnection in appsettings.json.");
-}
-
-// Ensure connection string is properly formatted
-Console.WriteLine($"Using connection string: {connectionString?.Substring(0, Math.Min(50, connectionString.Length))}...");
-
-// Validate connection string format
-if (!connectionString.Contains("sslmode="))
-{
-    if (connectionString.Contains("sslmode"))
+    
+    if (string.IsNullOrEmpty(connectionString))
     {
-        connectionString = connectionString.Replace("?sslmode", "?sslmode=require");
-    }
-    else
-    {
-        connectionString += connectionString.Contains("?") ? "&sslmode=require" : "?sslmode=require";
+        throw new InvalidOperationException("Database connection string not found. Please set DATABASE_URL environment variable or configure DefaultConnection in appsettings.json.");
     }
 }
 
