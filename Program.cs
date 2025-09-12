@@ -21,8 +21,9 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
-// Get connection string from environment variable for security
-var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") ??
+// Get connection string from environment variable for security (Replit provides DATABASE_URL)
+var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ??
+                      Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") ??
                       builder.Configuration.GetConnectionString("DefaultConnection");
 
 if (string.IsNullOrEmpty(connectionString))
