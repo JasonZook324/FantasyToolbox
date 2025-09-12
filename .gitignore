@@ -382,3 +382,6 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Data Protection Keys (should not be committed for security)
+DataProtectionKeys/
