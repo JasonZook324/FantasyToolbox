@@ -146,8 +146,8 @@ public class WaiverWireModel : AppPageModel
             throw new InvalidOperationException("ESPN authentication or league data not found.");
         }
 
-        // ESPN API call for waiver wire/free agents - using players_wl view to get all available players
-        var apiUrl = $"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{leagueData.LeagueYear}/segments/0/leagues/{leagueData.LeagueId}?view=players_wl&view=kona_playercard&scoringPeriodId=0";
+        // ESPN API call for waiver wire/free agents - using multiple view parameters to get full player pool
+        var apiUrl = $"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{leagueData.LeagueYear}/players?view=players_wl&view=kona_playercard&scoringPeriodId=0&size=1000";
         
         httpClient.DefaultRequestHeaders.Add("Cookie", $"SWID={espnAuth.Swid}; espn_s2={espnAuth.EspnS2}");
         
@@ -159,6 +159,11 @@ public class WaiverWireModel : AppPageModel
         }
 
         var jsonContent = await response.Content.ReadAsStringAsync();
+        
+        // Debug: Log the API URL and response size for troubleshooting
+        await _logger.LogAsync($"ESPN API URL: {apiUrl}", "Debug", "");
+        await _logger.LogAsync($"ESPN API Response Length: {jsonContent.Length} characters", "Debug", "");
+        
         await ParseWaiverWireData(jsonContent);
     }
 
