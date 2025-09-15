@@ -37,6 +37,7 @@
                 </li>
                 @{
                     var userEmail = HttpContextAccessor.HttpContext?.Session.GetString("UserEmail");
+                    var espnConnected = HttpContextAccessor.HttpContext?.Session.GetString("EspnConnected");
                     if (!string.IsNullOrEmpty(userEmail))
                     {
                         <li>
@@ -45,12 +46,17 @@
                         <li>
                             <a href="/WaiverWire">Waiver Wire</a>
                         </li>
+                        @if (espnConnected == "true")
+                        {
+                            <li>
+                                <a href="/Lineup">My Lineup</a>
+                            </li>
+                        }
                     }
                 }
             </ul>
             <ul class="right-nav">
                 @{
-                    var espnConnected = HttpContextAccessor.HttpContext?.Session.GetString("EspnConnected");
                     var firstName = HttpContextAccessor.HttpContext?.Session.GetString("FirstName");
                     var lastName = HttpContextAccessor.HttpContext?.Session.GetString("LastName");
                     if (string.IsNullOrEmpty(userEmail))
