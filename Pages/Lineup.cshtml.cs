@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using FantasyToolbox.Models;
 using System.Text.Json;
+using Newtonsoft.Json.Linq;
 
 public class LineupModel : AppPageModel
 {
@@ -68,8 +69,18 @@ public class LineupModel : AppPageModel
             }
 
             var jsonContent = await response.Content.ReadAsStringAsync();
-            ParseLineupData(jsonContent, user.SelectedTeamId.Value);
-            //ParseLineupData(jsonContent, user.UserId);
+
+       
+            if (user.SelectedTeamId.HasValue)
+            {
+                ParseLineupData(jsonContent, user.SelectedTeamId.Value);
+            }
+            else
+            {
+                ErrorMessage = "No team selected for this user.";
+                return Page();
+            }
+            
         }
         catch (Exception ex)
         {
@@ -83,7 +94,7 @@ public class LineupModel : AppPageModel
     private void ParseLineupData(string jsonContent, int userId)
     {
         using var doc = JsonDocument.Parse(jsonContent);
-
+        
         // Find the user's team roster
         var teams = doc.RootElement.GetProperty("teams");
         JsonElement? myTeam = null;
@@ -106,6 +117,8 @@ public class LineupModel : AppPageModel
         if (myTeam.Value.TryGetProperty("roster", out var roster) &&
             roster.TryGetProperty("entries", out var entries))
         {
+           
+
             foreach (var entry in entries.EnumerateArray())
             {
                 var player = new LineupPlayer();
@@ -193,6 +206,7 @@ public class LineupModel : AppPageModel
         }
         catch
         {
+            _logger.LogAsync("Failed to retrieve ESPN auth data.", "Error").GetAwaiter().GetResult();
             return null;
         }
     }
@@ -204,8 +218,9 @@ public class LineupModel : AppPageModel
             var espnService = HttpContext.RequestServices.GetRequiredService<IESPNService>();
             return await espnService.GetLeagueDataByUserIdAsync(userId);
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogAsync($"Failed to retrieve league data: {ex.Message}", "Error").GetAwaiter().GetResult();
             return null;
         }
     }
