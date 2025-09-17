@@ -1,0 +1,79 @@
+@page
+@model LineupModel
+@{
+    ViewData["Title"] = Model.TeamName;
+}
+
+<h2>@Model.TeamName</h2>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+else
+{
+    <h3>Team</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Slot</th>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Team</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var player in Model.Starters)
+        {
+            <tr>
+                <td>@player.Slot</td>
+                <td>@player.FullName</td>
+                <td>@player.Position</td>
+                <td>@player.ProTeam</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+
+    <h3>Bench</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Team</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var player in Model.Bench)
+        {
+            <tr>
+                <td>@player.FullName</td>
+                <td>@player.Position</td>
+                <td>@player.ProTeam</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+
+    <h3>Injured Reserve (IR)</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Team</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var player in Model.IR)
+        {
+            <tr>
+                <td>@player.FullName</td>
+                <td>@player.Position</td>
+                <td>@player.ProTeam</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
