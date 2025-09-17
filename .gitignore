@@ -385,3 +385,15 @@ FodyWeavers.xsd
 
 # Data Protection Keys (should not be committed for security)
 DataProtectionKeys/
+
+# Visual Studio user and workspace files
+.vs/
+*.suo
+
+# Build output
+bin/
+obj/
+
+# Ignore backup and layout files
+*.backup.json
+*.json # (if you want to ignore all json, but usually you want to be more specific)
