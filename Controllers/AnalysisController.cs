@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using FantasyToolbox.Services;
+using FantasyToolbox.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
@@ -107,6 +108,74 @@ namespace FantasyToolbox.Controllers
             {
                 _logger.LogError(ex, "Error analyzing player {PlayerId} for user {UserEmail}", playerId, HttpContext.Session.GetString("UserEmail"));
                 return StatusCode(500, new { error = "Failed to analyze player. Please try again." });
+            }
+        }
+
+        [HttpPost("waiver-wire/contextual")]
+        public async Task<IActionResult> AnalyzeContextualWaiverWire([FromBody] ContextualWaiverAnalysisRequest request)
+        {
+            try
+            {
+                // Get authenticated user email
+                var userEmail = HttpContext.Session.GetString("UserEmail");
+                if (string.IsNullOrEmpty(userEmail) && User.Identity?.IsAuthenticated == true)
+                {
+                    userEmail = User.Identity.Name;
+                }
+
+                if (string.IsNullOrEmpty(userEmail))
+                {
+                    return Unauthorized(new { error = "User authentication required" });
+                }
+
+                // Get the user record
+                var userRecord = await _context.Users.FirstOrDefaultAsync(u => u.Email == userEmail && u.IsActive);
+                if (userRecord == null)
+                {
+                    return Unauthorized(new { error = "User account not found" });
+                }
+
+                var espnAuth = await _context.EspnAuth.FirstOrDefaultAsync(e => e.UserId == userRecord.UserId);
+                var leagueData = await _context.FLeagueData.FirstOrDefaultAsync(f => f.UserId == userRecord.UserId);
+
+                if (espnAuth == null || leagueData == null)
+                {
+                    return BadRequest(new { error = "ESPN authentication or league data not found" });
+                }
+
+                // Get the selected player data
+                var selectedPlayerData = await GetPlayerData(espnAuth, leagueData, request.SelectedPlayerId.ToString());
+                if (selectedPlayerData == null)
+                {
+                    return BadRequest(new { error = "Selected player not found" });
+                }
+
+                // Fetch waiver wire data with position filter
+                var waiverWireData = await GetWaiverWireData(espnAuth, leagueData, request.PositionFilter);
+                
+                // Get NFL schedule data
+                var nflScheduleData = await GetNFLScheduleData();
+
+                // Generate contextual analysis
+                var analysis = await _geminiService.AnalyzeContextualWaiverWire(
+                    selectedPlayerData, 
+                    waiverWireData, 
+                    nflScheduleData,
+                    request.TopN ?? 10
+                );
+
+                return Ok(new ContextualWaiverAnalysisResponse
+                {
+                    SelectedPlayerName = GetPlayerName(selectedPlayerData),
+                    PositionFilter = request.PositionFilter,
+                    Analysis = analysis,
+                    GeneratedAt = DateTime.UtcNow
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error analyzing contextual waiver wire for user {UserEmail}", HttpContext.Session.GetString("UserEmail"));
+                return StatusCode(500, new { error = "Failed to analyze contextual waiver wire. Please try again." });
             }
         }
 
@@ -246,5 +315,126 @@ namespace FantasyToolbox.Controllers
         public string PlayerId { get; set; } = "";
         public string PlayerName { get; set; } = "";
         public string Analysis { get; set; } = "";
+        }
+
+        private async Task<object?> GetPlayerData(EspnAuth espnAuth, FLeagueData leagueData, string playerId)
+    {
+        using var httpClient = new HttpClient();
+        var espnRequest = new HttpRequestMessage(HttpMethod.Get, 
+            $"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{leagueData.LeagueYear}/segments/0/leagues/{leagueData.LeagueId}?view=kona_player_info");
+        espnRequest.Headers.Add("Cookie", $"SWID={espnAuth.Swid}; espn_s2={espnAuth.EspnS2}");
+        
+        var response = await httpClient.SendAsync(espnRequest);
+        if (!response.IsSuccessStatusCode) return null;
+
+        var jsonContent = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(jsonContent);
+        
+        if (doc.RootElement.TryGetProperty("players", out var playersArray))
+        {
+            foreach (var player in playersArray.EnumerateArray())
+            {
+                if (player.TryGetProperty("id", out var id) && id.GetInt32().ToString() == playerId)
+                {
+                    return JsonSerializer.Deserialize<object>(player.GetRawText());
+                }
+            }
+        }
+        return null;
+    }
+
+    private async Task<object?> GetWaiverWireData(EspnAuth espnAuth, FLeagueData leagueData, string? positionFilter)
+    {
+        using var httpClient = new HttpClient();
+        var apiUrl = $"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{leagueData.LeagueYear}/segments/0/leagues/{leagueData.LeagueId}";
+        
+        // Build filter based on position
+        var slotIds = positionFilter?.ToUpper() switch
+        {
+            "QB" => "[0]",
+            "RB" => "[2]", 
+            "WR" => "[4]",
+            "TE" => "[6]",
+            "K" => "[17]",
+            "D/ST" => "[16]",
+            _ => "[0,2,4,6,17,16]"
+        };
+
+        var filterJson = $@"{{""players"":{{""filterStatus"":{{""value"":[""FREEAGENT"",""WAIVERS""]}},""filterSlotIds"":{{""value"":{slotIds}}},""sortPercOwned"":{{""sortPriority"":1,""sortAsc"":false}},""limit"":50,""offset"":0}}}}";
+        
+        var waiverRequest = new HttpRequestMessage(HttpMethod.Get, $"{apiUrl}?view=kona_player_info");
+        waiverRequest.Headers.Add("X-Fantasy-Filter", filterJson);
+        waiverRequest.Headers.Add("Cookie", $"SWID={espnAuth.Swid}; espn_s2={espnAuth.EspnS2}");
+
+        var waiverResponse = await httpClient.SendAsync(waiverRequest);
+        if (!waiverResponse.IsSuccessStatusCode) return null;
+
+        var waiverContent = await waiverResponse.Content.ReadAsStringAsync();
+        using var waiverDoc = JsonDocument.Parse(waiverContent);
+
+        return JsonSerializer.Deserialize<object>(waiverDoc.RootElement.GetRawText());
+    }
+
+    private async Task<object?> GetNFLScheduleData()
+    {
+        try
+        {
+            using var httpClient = new HttpClient();
+            
+            // Get current week's NFL schedule from ESPN
+            var response = await httpClient.GetAsync("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(jsonContent);
+                return JsonSerializer.Deserialize<object>(doc.RootElement.GetRawText());
+            }
+            
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching NFL schedule data");
+            return null;
+        }
+    }
+
+    private string GetPlayerName(object? playerData)
+    {
+        if (playerData == null) return "Unknown";
+        
+        try
+        {
+            var json = JsonSerializer.Serialize(playerData);
+            using var doc = JsonDocument.Parse(json);
+            
+            if (doc.RootElement.TryGetProperty("player", out var playerInfo) &&
+                playerInfo.TryGetProperty("fullName", out var fullName))
+            {
+                return fullName.GetString() ?? "Unknown";
+            }
+            
+            return "Unknown";
+        }
+        catch
+        {
+            return "Unknown";
+        }
+    }
+
+    public class ContextualWaiverAnalysisRequest
+    {
+        public int SelectedPlayerId { get; set; }
+        public string? PositionFilter { get; set; }
+        public int? TopN { get; set; } = 10;
+    }
+
+    public class ContextualWaiverAnalysisResponse
+    {
+        public string SelectedPlayerName { get; set; } = "";
+        public string? PositionFilter { get; set; }
+        public string Analysis { get; set; } = "";
+        public DateTime GeneratedAt { get; set; }
     }
 }

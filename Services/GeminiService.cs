@@ -21,6 +21,95 @@ namespace FantasyToolbox.Services
             }
         }
 
+        public async Task<string> AnalyzeContextualWaiverWire(object selectedPlayerData, object? waiverWireData, object? nflScheduleData, int topN = 10)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(_apiKey))
+                {
+                    return "AI analysis unavailable - API key not configured";
+                }
+
+                var selectedPlayerJson = JsonSerializer.Serialize(selectedPlayerData, new JsonSerializerOptions { WriteIndented = true });
+                var waiverWireJson = waiverWireData != null ? JsonSerializer.Serialize(waiverWireData, new JsonSerializerOptions { WriteIndented = true }) : "No waiver wire data available";
+                var scheduleJson = nflScheduleData != null ? JsonSerializer.Serialize(nflScheduleData, new JsonSerializerOptions { WriteIndented = true }) : "No NFL schedule data available";
+                
+                var prompt = GenerateContextualWaiverPrompt(selectedPlayerJson, waiverWireJson, scheduleJson, topN);
+
+                var requestBody = new
+                {
+                    contents = new[]
+                    {
+                        new
+                        {
+                            parts = new[]
+                            {
+                                new { text = prompt }
+                            }
+                        }
+                    },
+                    generationConfig = new
+                    {
+                        temperature = 0.8,
+                        topK = 40,
+                        topP = 0.95,
+                        maxOutputTokens = 2048  // Increased for more detailed analysis
+                    },
+                    safetySettings = new[]
+                    {
+                        new
+                        {
+                            category = "HARM_CATEGORY_HARASSMENT",
+                            threshold = "BLOCK_MEDIUM_AND_ABOVE"
+                        },
+                        new
+                        {
+                            category = "HARM_CATEGORY_HATE_SPEECH", 
+                            threshold = "BLOCK_MEDIUM_AND_ABOVE"
+                        },
+                        new
+                        {
+                            category = "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                            threshold = "BLOCK_MEDIUM_AND_ABOVE"
+                        },
+                        new
+                        {
+                            category = "HARM_CATEGORY_DANGEROUS_CONTENT",
+                            threshold = "BLOCK_MEDIUM_AND_ABOVE"
+                        }
+                    }
+                };
+
+                var json = JsonSerializer.Serialize(requestBody);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync(
+                    $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={_apiKey}",
+                    content
+                );
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var geminiResponse = JsonSerializer.Deserialize<GeminiResponse>(responseContent);
+                    
+                    return geminiResponse?.candidates?.FirstOrDefault()?.content?.parts?.FirstOrDefault()?.text 
+                           ?? "No contextual analysis generated";
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogError("Gemini API error for contextual analysis: {StatusCode} - {Content}", response.StatusCode, errorContent);
+                    return $"AI contextual analysis temporarily unavailable (Status: {response.StatusCode})";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calling Gemini API for contextual waiver analysis");
+                return "AI contextual analysis temporarily unavailable - please try again later";
+            }
+        }
+
         public async Task<string> AnalyzePlayerPerformance(object playerData, string analysisType = "general")
         {
             try
@@ -176,6 +265,48 @@ Please provide a trade value analysis (3-4 sentences) covering:
 4. Timing considerations - best time to trade this player
 
 Focus on practical trade advice and realistic player comparisons for trade targets.";
+        }
+
+        private string GenerateContextualWaiverPrompt(string selectedPlayerJson, string waiverWireJson, string nflScheduleJson, int topN)
+        {
+            return $@"As a fantasy football expert, provide contextual waiver wire recommendations based on this specific roster situation.
+
+SELECTED ROSTER PLAYER:
+{selectedPlayerJson}
+
+AVAILABLE WAIVER WIRE PLAYERS:
+{waiverWireJson}
+
+CURRENT NFL SCHEDULE/MATCHUPS:
+{nflScheduleJson}
+
+ANALYSIS REQUEST:
+Provide strategic waiver wire recommendations for the top {topN} players based on the selected roster player. Consider:
+
+1. **ROSTER CONTEXT**: How do the available waiver players compare to/complement the selected roster player?
+2. **POSITIONAL STRATEGY**: 
+   - If same position: Who offers better upside, consistency, or matchup advantages?
+   - If different position: Which players provide the best roster balance and flexibility?
+3. **STREAMING OPPORTUNITIES**: Based on current NFL schedule data:
+   - Which players have favorable upcoming matchups?
+   - Any streaming plays for QB/K/D/ST positions?
+   - Week-to-week scheduling advantages?
+4. **PRACTICAL RECOMMENDATIONS**:
+   - Priority ranking of top waiver targets (1-{topN})
+   - Suggested FAAB percentages or waiver priority usage
+   - Drop candidates from current roster if needed
+   - Short-term vs. long-term value propositions
+
+5. **MATCHUP INTELLIGENCE**: Use the NFL schedule data to identify:
+   - Players with easier upcoming matchups
+   - Teams on bye weeks to avoid
+   - Favorable game scripts (projected high-scoring games)
+   - Weather/venue considerations if available
+
+FORMAT YOUR RESPONSE:
+Start with a brief summary of the strategic situation, then provide numbered recommendations for each top waiver target with specific reasoning, FAAB suggestions, and timing advice. Include any relevant streaming or schedule-based insights.
+
+Focus on actionable, data-driven advice that considers both immediate needs and longer-term roster construction.";
         }
     }
 

@@ -23,13 +23,59 @@
                 </div>
             }
 
-            <!-- Position Filter and CSV Export Controls -->
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <form method="get">
-                        <div class="input-group">
-                            <select name="position" class="form-select" onchange="this.form.submit()">
-                                <option value="">All Positions</option>
+            <!-- Contextual Analysis Controls -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="bi bi-robot"></i> Smart Waiver Analysis</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="get">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <label for="selectedPlayerId" class="form-label">Compare to Your Player:</label>
+                                        <select name="selectedPlayerId" id="selectedPlayerId" class="form-select">
+                                            <option value="">Select a player from your roster...</option>
+                                            @if (Model.AllRosterPlayers?.Any() == true)
+                                            {
+                                                <optgroup label="Starters">
+                                                    @foreach (var player in Model.Starters.OrderBy(p => p.Position).ThenBy(p => p.FullName))
+                                                    {
+                                                        <option value="@player.PlayerId" 
+                                                                @(Model.SelectedPlayerId == player.PlayerId ? "selected" : "")>
+                                                            @player.FullName (@player.Position - @player.ProTeam)
+                                                        </option>
+                                                    }
+                                                </optgroup>
+                                                <optgroup label="Bench">
+                                                    @foreach (var player in Model.Bench.OrderBy(p => p.Position).ThenBy(p => p.FullName))
+                                                    {
+                                                        <option value="@player.PlayerId" 
+                                                                @(Model.SelectedPlayerId == player.PlayerId ? "selected" : "")>
+                                                            @player.FullName (@player.Position - @player.ProTeam)
+                                                        </option>
+                                                    }
+                                                </optgroup>
+                                                @if (Model.IR?.Any() == true)
+                                                {
+                                                    <optgroup label="Injured Reserve">
+                                                        @foreach (var player in Model.IR.OrderBy(p => p.Position).ThenBy(p => p.FullName))
+                                                        {
+                                                            <option value="@player.PlayerId" 
+                                                                    @(Model.SelectedPlayerId == player.PlayerId ? "selected" : "")>
+                                                                @player.FullName (@player.Position - @player.ProTeam)
+                                                            </option>
+                                                        }
+                                                    </optgroup>
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="position" class="form-label">Position Filter:</label>
+                                        <select name="position" id="position" class="form-select">
+                                            <option value="">All Positions</option>
                                 @if (Model.SelectedPosition == "QB")
                                 {
                                     <option value="QB" selected>Quarterback (QB)</option>
@@ -77,22 +123,37 @@
                                 else
                                 {
                                     <option value="D/ST">Defense/Special Teams (D/ST)</option>
-                                }
-                            </select>
-                            <button type="submit" class="btn btn-primary">Filter</button>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">&nbsp;</label>
+                                        <div class="d-grid gap-2 d-md-flex">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="bi bi-search"></i> Update Analysis
+                                            </button>
+                                            @if (Model.SelectedPlayerId.HasValue && Model.WaiverWirePlayers?.Any() == true)
+                                            {
+                                                <button type="button" class="btn btn-success" id="bulkAnalysisBtn">
+                                                    <i class="bi bi-robot"></i> Analyze Top Pickups
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        @if (Model.WaiverWirePlayers?.Any() == true)
+                                        {
+                                            <form method="post" asp-page-handler="ExportCsv" style="display: inline;" class="w-100">
+                                                <input type="hidden" name="position" value="@Model.SelectedPosition" />
+                                                <button type="submit" class="btn btn-outline-secondary w-100">
+                                                    <i class="bi bi-download"></i> Export CSV
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </div>
+                            </form>
                         </div>
-                    </form>
-                </div>
-                <div class="col-md-6 text-end">
-                    @if (Model.WaiverWirePlayers?.Any() == true)
-                    {
-                        <form method="post" asp-page-handler="ExportCsv" style="display: inline;">
-                            <input type="hidden" name="position" value="@Model.SelectedPosition" />
-                            <button type="submit" class="btn btn-success">
-                                <i class="bi bi-download"></i> Export to CSV
-                            </button>
-                        </form>
-                    }
+                    </div>
                 </div>
             </div>
 
@@ -295,5 +356,78 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Handle bulk contextual analysis button
+    const bulkAnalysisBtn = document.getElementById('bulkAnalysisBtn');
+    if (bulkAnalysisBtn) {
+        bulkAnalysisBtn.addEventListener('click', function() {
+            const selectedPlayerId = document.getElementById('selectedPlayerId').value;
+            const positionFilter = document.getElementById('position').value;
+            
+            if (!selectedPlayerId) {
+                alert('Please select a player from your roster first.');
+                return;
+            }
+
+            // Show modal for bulk analysis
+            const modal = new bootstrap.Modal(document.getElementById('analysisModal'));
+            document.getElementById('analysisPlayerName').textContent = 'Contextual Waiver Wire Analysis';
+            document.getElementById('analysisContent').innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Analyzing waiver wire...</span>
+                    </div>
+                    <p class="mt-2">AI is analyzing the best waiver wire pickups based on your selected player and current matchups...</p>
+                </div>
+            `;
+            modal.show();
+            
+            // Call contextual waiver analysis API
+            fetch('/api/analysis/waiver-wire/contextual', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    selectedPlayerId: parseInt(selectedPlayerId),
+                    positionFilter: positionFilter || null,
+                    topN: 10
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.analysis) {
+                    document.getElementById('analysisContent').innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>Smart Waiver Analysis:</strong> Based on ${data.selectedPlayerName}
+                            ${data.positionFilter ? ` (${data.positionFilter} filter applied)` : ''}
+                        </div>
+                        <div class="analysis-text" style="white-space: pre-line;">${data.analysis}</div>
+                        <small class="text-muted">Generated on ${new Date(data.generatedAt).toLocaleString()}</small>
+                    `;
+                } else if (data.error) {
+                    document.getElementById('analysisContent').innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> ${data.error}
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('analysisContent').innerHTML = `
+                        <div class="alert alert-warning">
+                            No contextual analysis available. Please try again.
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('analysisContent').innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>Error:</strong> Failed to load contextual waiver analysis. Please try again.
+                    </div>
+                `;
+            });
+        });
+    }
 });
 </script>
