@@ -4,6 +4,8 @@ using System.Text.Json;
 using System.Text;
 using FantasyToolbox.Models;
 
+namespace FantasyToolbox.Pages;
+
 public class WaiverWireModel : AppPageModel
 {
     private readonly IUserService _userService;
@@ -19,8 +21,13 @@ public class WaiverWireModel : AppPageModel
     public string? ErrorMessage { get; set; }
     public string? SuccessMessage { get; set; }
     public string? SelectedPosition { get; set; }
+    public int? SelectedPlayerId { get; set; }
     public bool IsEspnConnected { get; set; }
     public List<WaiverWirePlayer> WaiverWirePlayers { get; set; } = new();
+    public List<RosterPlayer> AllRosterPlayers { get; set; } = new();
+    public List<RosterPlayer> Starters { get; set; } = new();
+    public List<RosterPlayer> Bench { get; set; } = new();
+    public List<RosterPlayer> IR { get; set; } = new();
 
     public class WaiverWirePlayer
     {
@@ -34,7 +41,16 @@ public class WaiverWireModel : AppPageModel
         public int Rank { get; set; }
     }
 
-    public async Task<IActionResult> OnGetAsync(string? position = null)
+    public class RosterPlayer
+    {
+        public int PlayerId { get; set; }
+        public string FullName { get; set; } = "";
+        public string Position { get; set; } = "";
+        public string ProTeam { get; set; } = "";
+        public string Slot { get; set; } = "";
+    }
+
+    public async Task<IActionResult> OnGetAsync(string? position = null, int? selectedPlayerId = null)
     {
         var userEmail = HttpContext.Session.GetString("UserEmail");
         
@@ -51,6 +67,7 @@ public class WaiverWireModel : AppPageModel
         }
 
         SelectedPosition = position;
+        SelectedPlayerId = selectedPlayerId;
         
         // Check ESPN connection status
         var espnConnectedStatus = HttpContext.Session.GetString("EspnConnected");
@@ -72,6 +89,7 @@ public class WaiverWireModel : AppPageModel
             }
 
             await FetchWaiverWireDataAsync(user.UserId);
+            await FetchRosterDataAsync(user.UserId, user.SelectedTeamId ?? 0);
             
             // Apply position filter if specified
             if (!string.IsNullOrEmpty(SelectedPosition))
@@ -484,5 +502,112 @@ public class WaiverWireModel : AppPageModel
             await _logger.LogAsync($"Error getting league data for user {userId}: {ex.Message}", "Error");
             return null;
         }
+    }
+
+    private async Task FetchRosterDataAsync(int userId, int selectedTeamId)
+    {
+        try
+        {
+            var espnAuth = await GetEspnAuthAsync(userId);
+            var leagueData = await GetLeagueDataAsync(userId);
+
+            if (espnAuth == null || leagueData == null)
+            {
+                return;
+            }
+
+            using var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Add("Cookie", $"SWID={espnAuth.Swid}; espn_s2={espnAuth.EspnS2}");
+            var apiUrl = $"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{leagueData.LeagueYear}/segments/0/leagues/{leagueData.LeagueId}?view=mRoster";
+            var response = await httpClient.GetAsync(apiUrl);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return;
+            }
+
+            var jsonContent = await response.Content.ReadAsStringAsync();
+            ParseRosterData(jsonContent, selectedTeamId);
+        }
+        catch (Exception ex)
+        {
+            await _logger.LogAsync($"Error fetching roster data for user {userId}: {ex.Message}", "Error", ex.ToString());
+        }
+    }
+
+    private void ParseRosterData(string jsonContent, int selectedTeamId)
+    {
+        using var doc = JsonDocument.Parse(jsonContent);
+        
+        // Find the user's team roster
+        var teams = doc.RootElement.GetProperty("teams");
+        JsonElement? myTeam = null;
+        foreach (var team in teams.EnumerateArray())
+        {
+            if (team.TryGetProperty("id", out var teamId))
+            {
+                if (teamId.GetInt32() == selectedTeamId)
+                {
+                    myTeam = team;
+                    break;
+                }
+            }
+        }
+
+        if (myTeam == null) return;
+
+        if (myTeam.Value.TryGetProperty("roster", out var roster) &&
+            roster.TryGetProperty("entries", out var entries))
+        {
+            foreach (var entry in entries.EnumerateArray())
+            {
+                var player = new RosterPlayer();
+                if (entry.TryGetProperty("playerId", out var playerId))
+                    player.PlayerId = playerId.GetInt32();
+
+                if (entry.TryGetProperty("playerPoolEntry", out var poolEntry) &&
+                    poolEntry.TryGetProperty("player", out var playerInfo))
+                {
+                    if (playerInfo.TryGetProperty("fullName", out var fullName))
+                        player.FullName = fullName.GetString() ?? "";
+
+                    if (playerInfo.TryGetProperty("defaultPositionId", out var positionId))
+                        player.Position = MapPositionId(positionId.GetInt32());
+
+                    if (playerInfo.TryGetProperty("proTeamId", out var proTeamId))
+                        player.ProTeam = MapProTeamId(proTeamId.GetInt32());
+                }
+
+                if (entry.TryGetProperty("lineupSlotId", out var slotId))
+                {
+                    player.Slot = MapLineupSlotId(slotId.GetInt32());
+                    if (player.Slot == "IR")
+                        IR.Add(player);
+                    else if (player.Slot == "Bench")
+                        Bench.Add(player);
+                    else
+                        Starters.Add(player);
+                }
+
+                AllRosterPlayers.Add(player);
+            }
+        }
+    }
+
+    private string MapLineupSlotId(int slotId)
+    {
+        return slotId switch
+        {
+            0 => "QB",
+            2 => "RB",
+            4 => "WR", 
+            6 => "TE",
+            16 => "D/ST",
+            17 => "K",
+            20 => "Bench",
+            21 => "IR",
+            23 => "FLEX",
+            _ => "Other"
+        };
     }
 }
