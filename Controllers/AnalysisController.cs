@@ -144,12 +144,15 @@ namespace FantasyToolbox.Controllers
                 }
 
                 // Get the selected player data
+                _logger.LogInformation("Searching for player with ID: {PlayerId} for user: {UserEmail}", request.SelectedPlayerId, userEmail);
                 var selectedPlayerData = await GetPlayerData(espnAuth, leagueData, request.SelectedPlayerId.ToString());
                 if (selectedPlayerData == null)
                 {
                     _logger.LogWarning("Player with ID {PlayerId} not found for user {UserEmail}", request.SelectedPlayerId, userEmail);
                     return BadRequest(new { error = $"Selected player not found (ID: {request.SelectedPlayerId}). Please try refreshing the page." });
                 }
+                
+                _logger.LogInformation("Found player data for ID: {PlayerId}", request.SelectedPlayerId);
 
                 // Fetch waiver wire data with position filter
                 var waiverWireData = await GetWaiverWireData(espnAuth, leagueData, request.PositionFilter);
@@ -293,39 +296,61 @@ namespace FantasyToolbox.Controllers
         espnRequest.Headers.Add("Cookie", $"SWID={espnAuth.Swid}; espn_s2={espnAuth.EspnS2}");
         
         var response = await httpClient.SendAsync(espnRequest);
-        if (!response.IsSuccessStatusCode) return null;
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogWarning("ESPN API request failed with status: {StatusCode}", response.StatusCode);
+            return null;
+        }
 
         var jsonContent = await response.Content.ReadAsStringAsync();
         using var doc = JsonDocument.Parse(jsonContent);
         
+        _logger.LogInformation("Looking for player ID {PlayerId} in roster data", playerId);
+        
         // Look through all teams and their roster entries to find the player
         if (doc.RootElement.TryGetProperty("teams", out var teamsArray))
         {
+            _logger.LogInformation("Found {TeamCount} teams in league data", teamsArray.GetArrayLength());
+            
             foreach (var team in teamsArray.EnumerateArray())
             {
                 if (team.TryGetProperty("roster", out var roster) &&
                     roster.TryGetProperty("entries", out var entries))
                 {
+                    _logger.LogInformation("Team has {EntryCount} roster entries", entries.GetArrayLength());
+                    
                     foreach (var entry in entries.EnumerateArray())
                     {
-                        if (entry.TryGetProperty("playerId", out var entryPlayerId) && 
-                            entryPlayerId.GetInt32().ToString() == playerId)
+                        if (entry.TryGetProperty("playerId", out var entryPlayerId))
                         {
-                            // Return both the roster entry and player info if available
-                            var result = new
+                            var entryPlayerIdStr = entryPlayerId.GetInt32().ToString();
+                            _logger.LogDebug("Checking player ID: {EntryPlayerId} against target: {TargetPlayerId}", entryPlayerIdStr, playerId);
+                            
+                            if (entryPlayerIdStr == playerId)
                             {
-                                playerId = entryPlayerId.GetInt32(),
-                                entry = JsonSerializer.Deserialize<object>(entry.GetRawText()),
-                                player = entry.TryGetProperty("playerPoolEntry", out var playerPool) && 
-                                         playerPool.TryGetProperty("player", out var playerInfo) 
-                                         ? JsonSerializer.Deserialize<object>(playerInfo.GetRawText()) : null
-                            };
-                            return result;
+                                _logger.LogInformation("Found matching player ID: {PlayerId}", playerId);
+                                // Return both the roster entry and player info if available
+                                var result = new
+                                {
+                                    playerId = entryPlayerId.GetInt32(),
+                                    entry = JsonSerializer.Deserialize<object>(entry.GetRawText()),
+                                    player = entry.TryGetProperty("playerPoolEntry", out var playerPool) && 
+                                             playerPool.TryGetProperty("player", out var playerInfo) 
+                                             ? JsonSerializer.Deserialize<object>(playerInfo.GetRawText()) : null
+                                };
+                                return result;
+                            }
                         }
                     }
                 }
             }
         }
+        else
+        {
+            _logger.LogWarning("No 'teams' property found in ESPN response");
+        }
+        
+        _logger.LogWarning("Player ID {PlayerId} not found in any team roster", playerId);
         return null;
     }
 
