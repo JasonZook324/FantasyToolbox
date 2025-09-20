@@ -8,12 +8,14 @@ public class WaiverWireModel : AppPageModel
 {
     private readonly IUserService _userService;
     private readonly ILogService _logger;
+    private readonly IConfiguration _configuration;
 
-    public WaiverWireModel(IUserService userService, ILogService logger, IESPNService espnService)
+    public WaiverWireModel(IUserService userService, ILogService logger, IESPNService espnService, IConfiguration configuration)
         : base(logger, espnService)
     {
         _userService = userService;
         _logger = logger;
+        _configuration = configuration;
     }
 
     public string? ErrorMessage { get; set; }
@@ -563,11 +565,11 @@ public class WaiverWireModel : AppPageModel
             using var httpClient = new HttpClient();
             httpClient.Timeout = TimeSpan.FromSeconds(30); // Set reasonable timeout
             
-            // Get the API key from environment variables
-            var apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
+            // Get the API key from configuration
+            var apiKey = _configuration["GeminiApi:ApiKey"];
             if (string.IsNullOrEmpty(apiKey))
             {
-                await _logger.LogAsync("GEMINI_API_KEY not found in environment variables", "Error");
+                await _logger.LogAsync("GeminiApi:ApiKey not found in configuration", "Error");
                 return "AI recommendations are currently unavailable. Please contact support if this continues.";
             }
 
