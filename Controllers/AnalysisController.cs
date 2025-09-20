@@ -283,39 +283,6 @@ namespace FantasyToolbox.Controllers
                 return StatusCode(500, new { error = "Failed to analyze waiver wire. Please try again." });
             }
         }
-    }
-
-    public class AnalysisRequest
-    {
-        public string? AnalysisType { get; set; } // "general", "waiver_pickup", "start_sit", "trade_value"
-    }
-
-    public class WaiverAnalysisRequest
-    {
-        public int? TopN { get; set; } = 10;
-    }
-
-    public class AnalysisResponse
-    {
-        public string PlayerId { get; set; } = "";
-        public string AnalysisType { get; set; } = "";
-        public string Analysis { get; set; } = "";
-        public DateTime GeneratedAt { get; set; }
-    }
-
-    public class WaiverAnalysisResponse
-    {
-        public string AnalysisType { get; set; } = "";
-        public List<PlayerAnalysisResult> PlayerAnalyses { get; set; } = new();
-        public DateTime GeneratedAt { get; set; }
-    }
-
-    public class PlayerAnalysisResult
-    {
-        public string PlayerId { get; set; } = "";
-        public string PlayerName { get; set; } = "";
-        public string Analysis { get; set; } = "";
-        }
 
         private async Task<object?> GetPlayerData(EspnAuth espnAuth, FLeagueData leagueData, string playerId)
     {
@@ -421,6 +388,39 @@ namespace FantasyToolbox.Controllers
         {
             return "Unknown";
         }
+    }
+    }
+
+    public class AnalysisRequest
+    {
+        public string? AnalysisType { get; set; } // "general", "waiver_pickup", "start_sit", "trade_value"
+    }
+
+    public class WaiverAnalysisRequest
+    {
+        public int? TopN { get; set; } = 10;
+    }
+
+    public class AnalysisResponse
+    {
+        public string PlayerId { get; set; } = "";
+        public string AnalysisType { get; set; } = "";
+        public string Analysis { get; set; } = "";
+        public DateTime GeneratedAt { get; set; }
+    }
+
+    public class WaiverAnalysisResponse
+    {
+        public string AnalysisType { get; set; } = "";
+        public List<PlayerAnalysisResult> PlayerAnalyses { get; set; } = new();
+        public DateTime GeneratedAt { get; set; }
+    }
+
+    public class PlayerAnalysisResult
+    {
+        public string PlayerId { get; set; } = "";
+        public string PlayerName { get; set; } = "";
+        public string Analysis { get; set; } = "";
     }
 
     public class ContextualWaiverAnalysisRequest

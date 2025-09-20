@@ -42,19 +42,27 @@
                                                 <optgroup label="Starters">
                                                     @foreach (var player in Model.Starters.OrderBy(p => p.Position).ThenBy(p => p.FullName))
                                                     {
-                                                        <option value="@player.PlayerId" 
-                                                                @(Model.SelectedPlayerId == player.PlayerId ? "selected" : "")>
-                                                            @player.FullName (@player.Position - @player.ProTeam)
-                                                        </option>
+                                                        @if (Model.SelectedPlayerId == player.PlayerId)
+                                                        {
+                                                            <option value="@player.PlayerId" selected>@player.FullName (@player.Position - @player.ProTeam)</option>
+                                                        }
+                                                        else
+                                                        {
+                                                            <option value="@player.PlayerId">@player.FullName (@player.Position - @player.ProTeam)</option>
+                                                        }
                                                     }
                                                 </optgroup>
                                                 <optgroup label="Bench">
                                                     @foreach (var player in Model.Bench.OrderBy(p => p.Position).ThenBy(p => p.FullName))
                                                     {
-                                                        <option value="@player.PlayerId" 
-                                                                @(Model.SelectedPlayerId == player.PlayerId ? "selected" : "")>
-                                                            @player.FullName (@player.Position - @player.ProTeam)
-                                                        </option>
+                                                        @if (Model.SelectedPlayerId == player.PlayerId)
+                                                        {
+                                                            <option value="@player.PlayerId" selected>@player.FullName (@player.Position - @player.ProTeam)</option>
+                                                        }
+                                                        else
+                                                        {
+                                                            <option value="@player.PlayerId">@player.FullName (@player.Position - @player.ProTeam)</option>
+                                                        }
                                                     }
                                                 </optgroup>
                                                 @if (Model.IR?.Any() == true)
@@ -62,10 +70,14 @@
                                                     <optgroup label="Injured Reserve">
                                                         @foreach (var player in Model.IR.OrderBy(p => p.Position).ThenBy(p => p.FullName))
                                                         {
-                                                            <option value="@player.PlayerId" 
-                                                                    @(Model.SelectedPlayerId == player.PlayerId ? "selected" : "")>
-                                                                @player.FullName (@player.Position - @player.ProTeam)
-                                                            </option>
+                                                            @if (Model.SelectedPlayerId == player.PlayerId)
+                                                            {
+                                                                <option value="@player.PlayerId" selected>@player.FullName (@player.Position - @player.ProTeam)</option>
+                                                            }
+                                                            else
+                                                            {
+                                                                <option value="@player.PlayerId">@player.FullName (@player.Position - @player.ProTeam)</option>
+                                                            }
                                                         }
                                                     </optgroup>
                                                 }
@@ -123,6 +135,7 @@
                                 else
                                 {
                                     <option value="D/ST">Defense/Special Teams (D/ST)</option>
+                                }
                                         </select>
                                     </div>
                                     <div class="col-md-3">
