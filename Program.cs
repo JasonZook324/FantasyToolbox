@@ -177,6 +177,8 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IESPNService, ESPNService>();
 builder.Services.AddScoped<ILogService, LogService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddHttpClient<GeminiService>();
+builder.Services.AddScoped<GeminiService>();
 var app = builder.Build();
 
 // Apply database migrations on startup

@@ -109,6 +109,7 @@
                                 <th>Ownership %</th>
                                 <th>Fantasy Points</th>
                                 <th>Projected Points</th>
+                                <th>AI Analysis</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -124,6 +125,13 @@
                                     <td>@player.OwnershipPercentage%</td>
                                     <td>@player.FantasyPoints</td>
                                     <td>@player.ProjectedPoints</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-primary analyze-player" 
+                                                data-player-id="@player.Id" 
+                                                data-player-name="@player.FullName">
+                                            <i class="bi bi-robot"></i> Analyze
+                                        </button>
+                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -163,3 +171,129 @@
         </div>
     </div>
 </div>
+
+<!-- AI Analysis Modal -->
+<div class="modal fade" id="analysisModal" tabindex="-1" aria-labelledby="analysisModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="analysisModalLabel">
+                    <i class="bi bi-robot"></i> AI Player Analysis
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="analysisPlayerName" class="h6 mb-3"></div>
+                <div id="analysisContent">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Analyzing...</span>
+                        </div>
+                        <p class="mt-2">AI is analyzing this player...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="btn-group" role="group" aria-label="Analysis types">
+                    <input type="radio" class="btn-check" name="analysisType" id="generalAnalysis" value="general" checked>
+                    <label class="btn btn-outline-primary" for="generalAnalysis">General</label>
+                    
+                    <input type="radio" class="btn-check" name="analysisType" id="waiverAnalysis" value="waiver_pickup">
+                    <label class="btn btn-outline-primary" for="waiverAnalysis">Waiver</label>
+                    
+                    <input type="radio" class="btn-check" name="analysisType" id="startSitAnalysis" value="start_sit">
+                    <label class="btn btn-outline-primary" for="startSitAnalysis">Start/Sit</label>
+                    
+                    <input type="radio" class="btn-check" name="analysisType" id="tradeAnalysis" value="trade_value">
+                    <label class="btn btn-outline-primary" for="tradeAnalysis">Trade Value</label>
+                </div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle analyze player buttons
+    document.querySelectorAll('.analyze-player').forEach(button => {
+        button.addEventListener('click', function() {
+            const playerId = this.getAttribute('data-player-id');
+            const playerName = this.getAttribute('data-player-name');
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('analysisModal'));
+            document.getElementById('analysisPlayerName').textContent = playerName;
+            document.getElementById('analysisContent').innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Analyzing...</span>
+                    </div>
+                    <p class="mt-2">AI is analyzing this player...</p>
+                </div>
+            `;
+            modal.show();
+            
+            // Get selected analysis type
+            const analysisType = document.querySelector('input[name="analysisType"]:checked').value;
+            
+            // Call AI analysis API
+            fetch(`/api/analysis/player/${playerId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    analysisType: analysisType
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.analysis) {
+                    document.getElementById('analysisContent').innerHTML = `
+                        <div class="alert alert-info">
+                            <strong>Analysis Type:</strong> ${data.analysisType.replace('_', ' ').toUpperCase()}
+                        </div>
+                        <div class="analysis-text">${data.analysis}</div>
+                        <small class="text-muted">Generated on ${new Date(data.generatedAt).toLocaleString()}</small>
+                    `;
+                } else if (data.error) {
+                    document.getElementById('analysisContent').innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> ${data.error}
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('analysisContent').innerHTML = `
+                        <div class="alert alert-warning">
+                            No analysis available for this player.
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('analysisContent').innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>Error:</strong> Failed to load AI analysis. Please try again.
+                    </div>
+                `;
+            });
+        });
+    });
+
+    // Handle analysis type changes
+    document.querySelectorAll('input[name="analysisType"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            // Re-trigger analysis if modal is open and a player is selected
+            const modal = document.getElementById('analysisModal');
+            if (modal.classList.contains('show')) {
+                const activeButton = document.querySelector('.analyze-player[data-player-id]');
+                if (activeButton) {
+                    activeButton.click();
+                }
+            }
+        });
+    });
+});
+</script>
