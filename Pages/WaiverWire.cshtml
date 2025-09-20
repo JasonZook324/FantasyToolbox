@@ -1,76 +1,50 @@
 @page
-@model WaiverWireModel
+@model FantasyToolbox.Pages.WaiverWireModel
 @{
     ViewData["Title"] = "Waiver Wire";
 }
 
-<div class="container mt-4">
+<div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <h2>Waiver Wire</h2>
-            
-            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-            {
-                <div class="alert alert-danger">
-                    @Model.ErrorMessage
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="bi bi-list-task"></i> Waiver Wire Analysis</h3>
+                    <p class="mb-0">Find the best available players and make informed waiver wire decisions.</p>
                 </div>
-            }
-            
-            @if (!string.IsNullOrEmpty(Model.SuccessMessage))
-            {
-                <div class="alert alert-success">
-                    @Model.SuccessMessage
-                </div>
-            }
-
-            <!-- Contextual Analysis Controls -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5><i class="bi bi-robot"></i> Smart Waiver Analysis</h5>
+                <div class="card-body">
+                    @if (ViewData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> @ViewData["ErrorMessage"]
                         </div>
-                        <div class="card-body">
-                            <form method="get">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <label for="selectedPlayerId" class="form-label">Compare to Your Player:</label>
+                    }
+                    else if (ViewData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success">
+                            <strong>Success:</strong> @ViewData["SuccessMessage"]
+                        </div>
+                    }
+
+                    @if (Model.IsEspnConnected)
+                    {
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title">Filter Options</h5>
+                                <form method="get" class="row g-3 align-items-end">
+                                    <div class="col-md-5">
+                                        <label for="selectedPlayerId" class="form-label">Compare Against Your Roster Player:</label>
                                         <select name="selectedPlayerId" id="selectedPlayerId" class="form-select">
-                                            <option value="">Select a player from your roster...</option>
+                                            <option value="">Select a player (optional)</option>
                                             @if (Model.AllRosterPlayers?.Any() == true)
                                             {
-                                                <optgroup label="Starters">
-                                                    @foreach (var player in Model.Starters.OrderBy(p => p.Position).ThenBy(p => p.FullName))
-                                                    {
-                                                        @if (Model.SelectedPlayerId == player.PlayerId)
-                                                        {
-                                                            <option value="@player.PlayerId" selected>@player.FullName (@player.Position - @player.ProTeam)</option>
-                                                        }
-                                                        else
-                                                        {
-                                                            <option value="@player.PlayerId">@player.FullName (@player.Position - @player.ProTeam)</option>
-                                                        }
-                                                    }
-                                                </optgroup>
-                                                <optgroup label="Bench">
-                                                    @foreach (var player in Model.Bench.OrderBy(p => p.Position).ThenBy(p => p.FullName))
-                                                    {
-                                                        @if (Model.SelectedPlayerId == player.PlayerId)
-                                                        {
-                                                            <option value="@player.PlayerId" selected>@player.FullName (@player.Position - @player.ProTeam)</option>
-                                                        }
-                                                        else
-                                                        {
-                                                            <option value="@player.PlayerId">@player.FullName (@player.Position - @player.ProTeam)</option>
-                                                        }
-                                                    }
-                                                </optgroup>
-                                                @if (Model.IR?.Any() == true)
+                                                var positionGroups = Model.AllRosterPlayers.GroupBy(p => p.Position);
+                                                foreach (var positionGroup in positionGroups.OrderBy(g => g.Key))
                                                 {
-                                                    <optgroup label="Injured Reserve">
-                                                        @foreach (var player in Model.IR.OrderBy(p => p.Position).ThenBy(p => p.FullName))
+                                                    <optgroup label="@positionGroup.Key">
+                                                        @foreach (var player in positionGroup.OrderBy(p => p.FullName))
                                                         {
-                                                            @if (Model.SelectedPlayerId == player.PlayerId)
+                                                            if (Model.SelectedPlayerId == player.PlayerId)
                                                             {
                                                                 <option value="@player.PlayerId" selected>@player.FullName (@player.Position - @player.ProTeam)</option>
                                                             }
@@ -144,12 +118,6 @@
                                             <button type="submit" class="btn btn-primary">
                                                 <i class="bi bi-search"></i> Update Analysis
                                             </button>
-                                            @if (Model.SelectedPlayerId.HasValue && Model.WaiverWirePlayers?.Any() == true)
-                                            {
-                                                <button type="button" class="btn btn-success" id="bulkAnalysisBtn">
-                                                    <i class="bi bi-robot"></i> Analyze Top Pickups
-                                                </button>
-                                            }
                                         </div>
                                     </div>
                                     <div class="col-md-2">
@@ -167,8 +135,6 @@
                             </form>
                         </div>
                     </div>
-                </div>
-            </div>
 
             @if (Model.WaiverWirePlayers?.Any() == true)
             {
@@ -176,22 +142,21 @@
                     <table class="table table-striped table-hover">
                         <thead class="table-dark">
                             <tr>
-                                <th>Rank</th>
                                 <th>Player Name</th>
                                 <th>Position</th>
                                 <th>Team</th>
                                 <th>Ownership %</th>
                                 <th>Fantasy Points</th>
                                 <th>Projected Points</th>
-                                <th>AI Analysis</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var player in Model.WaiverWirePlayers)
                             {
                                 <tr>
-                                    <td>@player.Rank</td>
-                                    <td><strong>@player.FullName</strong></td>
+                                    <td>
+                                        <strong>@player.FullName</strong>
+                                    </td>
                                     <td>
                                         <span class="badge bg-secondary">@player.Position</span>
                                     </td>
@@ -199,26 +164,21 @@
                                     <td>@player.OwnershipPercentage%</td>
                                     <td>@player.FantasyPoints</td>
                                     <td>@player.ProjectedPoints</td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-outline-primary analyze-player" 
-                                                data-player-id="@player.PlayerId" 
-                                                data-player-name="@player.FullName">
-                                            <i class="bi bi-robot"></i> Analyze
-                                        </button>
-                                    </td>
                                 </tr>
                             }
                         </tbody>
                     </table>
                 </div>
-                
-                <div class="mt-3">
+
+                <div class="mt-4">
+                    <h5>Analysis Summary</h5>
                     <p class="text-muted">
-                        Showing @Model.WaiverWirePlayers.Count player(s)
+                        Showing @Model.WaiverWirePlayers.Count() available waiver wire players
                         @if (!string.IsNullOrEmpty(Model.SelectedPosition))
                         {
-                            @:for position @Model.SelectedPosition
+                            <text>at position @Model.SelectedPosition</text>
                         }
+                        . Players are sorted by ownership percentage and fantasy points to help you identify the best available options.
                     </p>
                 </div>
             }
@@ -245,308 +205,3 @@
         </div>
     </div>
 </div>
-
-<!-- AI Analysis Modal -->
-<div class="modal fade" id="analysisModal" tabindex="-1" aria-labelledby="analysisModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="analysisModalLabel">
-                    <i class="bi bi-robot"></i> AI Player Analysis
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div id="analysisPlayerName" class="h6 mb-3"></div>
-                <div id="analysisContent">
-                    <div class="text-center">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Analyzing...</span>
-                        </div>
-                        <p class="mt-2">AI is analyzing this player...</p>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <div class="btn-group" role="group" aria-label="Analysis types">
-                    <input type="radio" class="btn-check" name="analysisType" id="generalAnalysis" value="general" checked>
-                    <label class="btn btn-outline-primary" for="generalAnalysis">General</label>
-                    
-                    <input type="radio" class="btn-check" name="analysisType" id="waiverAnalysis" value="waiver_pickup">
-                    <label class="btn btn-outline-primary" for="waiverAnalysis">Waiver</label>
-                    
-                    <input type="radio" class="btn-check" name="analysisType" id="startSitAnalysis" value="start_sit">
-                    <label class="btn btn-outline-primary" for="startSitAnalysis">Start/Sit</label>
-                    
-                    <input type="radio" class="btn-check" name="analysisType" id="tradeAnalysis" value="trade_value">
-                    <label class="btn btn-outline-primary" for="tradeAnalysis">Trade Value</label>
-                </div>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle analyze player buttons
-    document.querySelectorAll('.analyze-player').forEach(button => {
-        button.addEventListener('click', function() {
-            const playerId = this.getAttribute('data-player-id');
-            const playerName = this.getAttribute('data-player-name');
-            
-            // Show modal - handle Bootstrap not loaded case
-            const modalElement = document.getElementById('analysisModal');
-            let modal;
-            
-            try {
-                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                    modal = new bootstrap.Modal(modalElement);
-                } else {
-                    throw new Error('Bootstrap not available');
-                }
-            } catch (e) {
-                console.log('Using manual modal fallback for individual player analysis');
-                modal = {
-                    show: () => {
-                        modalElement.style.display = 'block';
-                        modalElement.classList.add('show');
-                        modalElement.setAttribute('aria-hidden', 'false');
-                        document.body.classList.add('modal-open');
-                        
-                        if (!document.getElementById('customModalBackdrop')) {
-                            const backdrop = document.createElement('div');
-                            backdrop.className = 'modal-backdrop fade show';
-                            backdrop.id = 'customModalBackdrop';
-                            document.body.appendChild(backdrop);
-                            backdrop.onclick = () => modal.hide();
-                        }
-                    },
-                    hide: () => {
-                        modalElement.style.display = 'none';
-                        modalElement.classList.remove('show');
-                        modalElement.setAttribute('aria-hidden', 'true');
-                        document.body.classList.remove('modal-open');
-                        const backdrop = document.getElementById('customModalBackdrop');
-                        if (backdrop) backdrop.remove();
-                    }
-                };
-            }
-            document.getElementById('analysisPlayerName').textContent = playerName;
-            document.getElementById('analysisContent').innerHTML = `
-                <div class="text-center">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Analyzing...</span>
-                    </div>
-                    <p class="mt-2">AI is analyzing this player...</p>
-                </div>
-            `;
-            modal.show();
-            
-            // Get selected analysis type
-            const analysisType = document.querySelector('input[name="analysisType"]:checked').value;
-            
-            // Call AI analysis API
-            fetch(`/api/analysis/player/${playerId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    analysisType: analysisType
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.analysis) {
-                    document.getElementById('analysisContent').innerHTML = `
-                        <div class="alert alert-info">
-                            <strong>Analysis Type:</strong> ${data.analysisType.replace('_', ' ').toUpperCase()}
-                        </div>
-                        <div class="analysis-text">${data.analysis}</div>
-                        <small class="text-muted">Generated on ${new Date(data.generatedAt).toLocaleString()}</small>
-                    `;
-                } else if (data.error) {
-                    document.getElementById('analysisContent').innerHTML = `
-                        <div class="alert alert-danger">
-                            <strong>Error:</strong> ${data.error}
-                        </div>
-                    `;
-                } else {
-                    document.getElementById('analysisContent').innerHTML = `
-                        <div class="alert alert-warning">
-                            No analysis available for this player.
-                        </div>
-                    `;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('analysisContent').innerHTML = `
-                    <div class="alert alert-danger">
-                        <strong>Error:</strong> Failed to load AI analysis. Please try again.
-                    </div>
-                `;
-            });
-        });
-    });
-
-    // Handle analysis type changes
-    document.querySelectorAll('input[name="analysisType"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            // Re-trigger analysis if modal is open and a player is selected
-            const modal = document.getElementById('analysisModal');
-            if (modal.classList.contains('show')) {
-                const activeButton = document.querySelector('.analyze-player[data-player-id]');
-                if (activeButton) {
-                    activeButton.click();
-                }
-            }
-        });
-    });
-
-    // Handle bulk contextual analysis button
-    const bulkAnalysisBtn = document.getElementById('bulkAnalysisBtn');
-    if (bulkAnalysisBtn) {
-        bulkAnalysisBtn.addEventListener('click', function() {
-            const selectedPlayerId = document.getElementById('selectedPlayerId').value;
-            const positionFilter = document.getElementById('position').value;
-            
-            if (!selectedPlayerId) {
-                alert('Please select a player from your roster first.');
-                return;
-            }
-
-            // Show modal for bulk analysis - wait for Bootstrap or use fallback
-            const modalElement = document.getElementById('analysisModal');
-            let modal;
-            
-            // Try to use Bootstrap, with fallback if not available
-            try {
-                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                    modal = new bootstrap.Modal(modalElement);
-                } else {
-                    throw new Error('Bootstrap not available');
-                }
-            } catch (e) {
-                console.log('Using manual modal fallback (Bootstrap not loaded)');
-                // Fallback: manually show modal if Bootstrap isn't loaded
-                modal = {
-                    show: () => {
-                        modalElement.style.display = 'block';
-                        modalElement.classList.add('show');
-                        modalElement.setAttribute('aria-hidden', 'false');
-                        document.body.classList.add('modal-open');
-                        
-                        // Create backdrop
-                        if (!document.getElementById('customModalBackdrop')) {
-                            const backdrop = document.createElement('div');
-                            backdrop.className = 'modal-backdrop fade show';
-                            backdrop.id = 'customModalBackdrop';
-                            document.body.appendChild(backdrop);
-                            
-                            // Close on backdrop click
-                            backdrop.onclick = () => modal.hide();
-                        }
-                    },
-                    hide: () => {
-                        modalElement.style.display = 'none';
-                        modalElement.classList.remove('show');
-                        modalElement.setAttribute('aria-hidden', 'true');
-                        document.body.classList.remove('modal-open');
-                        const backdrop = document.getElementById('customModalBackdrop');
-                        if (backdrop) backdrop.remove();
-                    }
-                };
-            }
-            document.getElementById('analysisPlayerName').textContent = 'Contextual Waiver Wire Analysis';
-            document.getElementById('analysisContent').innerHTML = `
-                <div class="text-center">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Analyzing waiver wire...</span>
-                    </div>
-                    <p class="mt-2">AI is analyzing the best waiver wire pickups based on your selected player and current matchups...</p>
-                </div>
-            `;
-            modal.show();
-            
-            // Call contextual waiver analysis API
-            fetch('/api/analysis/waiver-wire/contextual', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    selectedPlayerId: parseInt(selectedPlayerId),
-                    positionFilter: positionFilter || null,
-                    topN: 10
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(error => Promise.reject(error));
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.analysis) {
-                    document.getElementById('analysisContent').innerHTML = `
-                        <div class="alert alert-success">
-                            <strong>Smart Waiver Analysis:</strong> Based on ${data.selectedPlayerName}
-                            ${data.positionFilter ? ` (${data.positionFilter} filter applied)` : ''}
-                        </div>
-                        <div class="analysis-text" style="white-space: pre-line;">${data.analysis}</div>
-                        <small class="text-muted">Generated on ${new Date(data.generatedAt).toLocaleString()}</small>
-                    `;
-                } else if (data.error) {
-                    document.getElementById('analysisContent').innerHTML = `
-                        <div class="alert alert-danger">
-                            <strong>Error:</strong> ${data.error}
-                        </div>
-                    `;
-                } else {
-                    document.getElementById('analysisContent').innerHTML = `
-                        <div class="alert alert-warning">
-                            No contextual analysis available. Please try again.
-                        </div>
-                    `;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                let errorMessage = 'Failed to load contextual waiver analysis. Please try again.';
-                
-                if (error.message && error.message.includes('usage limit')) {
-                    errorMessage = error.message + ' Please wait a minute and try again, or use the regular waiver wire recommendations.';
-                } else if (error.error && error.error.includes('temporarily unavailable')) {
-                    errorMessage = error.message || 'AI analysis is temporarily unavailable due to usage limits. Please wait a minute and try again.';
-                }
-                
-                document.getElementById('analysisContent').innerHTML = `
-                    <div class="alert alert-warning">
-                        <strong>AI Analysis Temporarily Unavailable:</strong><br>
-                        ${errorMessage}<br><br>
-                        <strong>Alternative:</strong> You can still use the "Update Analysis" button above to get waiver wire recommendations without AI analysis.
-                    </div>
-                `;
-            });
-        });
-    }
-    
-    // Handle modal close button for both Bootstrap and fallback
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('btn-close') || e.target.getAttribute('data-bs-dismiss') === 'modal') {
-            const modalElement = document.getElementById('analysisModal');
-            if (modalElement.style.display === 'block' || modalElement.classList.contains('show')) {
-                // Manual fallback close
-                modalElement.style.display = 'none';
-                modalElement.classList.remove('show');
-                modalElement.setAttribute('aria-hidden', 'true');
-                document.body.classList.remove('modal-open');
-                const backdrop = document.getElementById('customModalBackdrop');
-                if (backdrop) backdrop.remove();
-            }
-        }
-    });
-});
-</script>
