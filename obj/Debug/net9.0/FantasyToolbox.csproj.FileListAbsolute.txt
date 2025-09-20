@@ -541,3 +541,5 @@ C:/Users/64515C/source/repos/LEARNING/FantasyToolbox/obj/Debug/net9.0/compressed
 /home/runner/workspace/obj/Debug/net9.0/scopedcss/Pages/_Layout.cshtml.rz.scp.css
 /home/runner/workspace/obj/Debug/net9.0/compressed/qooe5lylyr-i0af5u47hr.gz
 /home/runner/workspace/obj/Debug/net9.0/compressed/jg2ou2fivk-i0af5u47hr.gz
+/home/runner/workspace/bin/Debug/net9.0/package-lock.json
+/home/runner/workspace/bin/Debug/net9.0/package.json

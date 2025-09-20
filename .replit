@@ -1,6 +1,7 @@
 modules = ["dotnet-7.0", "web", "nodejs-20", "dotnet-9.0", "postgresql-16"]
 [agent]
 expertMode = true
+integrations = ["javascript_gemini:1.0.0"]
 
 [nix]
 channel = "stable-25_05"
@@ -36,6 +37,10 @@ externalPort = 80
 [[ports]]
 localPort = 43757
 externalPort = 3000
+
+[[ports]]
+localPort = 43945
+externalPort = 3001
 
 [deployment]
 deploymentTarget = "autoscale"
