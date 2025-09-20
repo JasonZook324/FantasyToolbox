@@ -19,6 +19,7 @@ public class WaiverWireModel : AppPageModel
     public string? ErrorMessage { get; set; }
     public string? SuccessMessage { get; set; }
     public string? SelectedPosition { get; set; }
+    public string? AIRecommendations { get; set; }
     public bool IsEspnConnected { get; set; }
     public List<WaiverWirePlayer> WaiverWirePlayers { get; set; } = new();
 
@@ -90,6 +91,73 @@ public class WaiverWireModel : AppPageModel
         return Page();
     }
 
+    public async Task<IActionResult> OnPostGetAIRecommendationsAsync(string? position = null)
+    {
+        var userEmail = HttpContext.Session.GetString("UserEmail");
+        
+        if (string.IsNullOrEmpty(userEmail))
+        {
+            return RedirectToPage("/Login");
+        }
+
+        SelectedPosition = position;
+        
+        // Clear any previous AI recommendations and messages to avoid stale content
+        AIRecommendations = null;
+        ErrorMessage = null;
+        SuccessMessage = null;
+
+        try
+        {
+            var user = await _userService.GetUserByEmailAsync(userEmail);
+            if (user == null)
+            {
+                ErrorMessage = "User not found.";
+                return Page();
+            }
+
+            // First fetch the waiver wire data
+            await FetchWaiverWireDataAsync(user.UserId);
+            
+            // Apply position filter if specified
+            var playersForAI = WaiverWirePlayers;
+            if (!string.IsNullOrEmpty(SelectedPosition))
+            {
+                playersForAI = WaiverWirePlayers
+                    .Where(p => p.Position.Equals(SelectedPosition, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            if (playersForAI.Any())
+            {
+                // Get AI recommendations from Gemini
+                var recommendations = await GetGeminiRecommendationsAsync(playersForAI, position);
+                
+                if (!string.IsNullOrWhiteSpace(recommendations))
+                {
+                    AIRecommendations = recommendations;
+                    SuccessMessage = "AI recommendations generated successfully!";
+                }
+                else
+                {
+                    ErrorMessage = "AI analysis completed but no recommendations were generated. Please try again.";
+                }
+            }
+            else
+            {
+                ErrorMessage = "No waiver wire players available for AI analysis.";
+            }
+        }
+        catch (Exception ex)
+        {
+            AIRecommendations = null; // Clear on failure
+            ErrorMessage = "Unable to generate AI recommendations. Please try again later.";
+            await _logger.LogAsync($"Error generating AI recommendations: {ex.Message}", "Error", ex.ToString());
+        }
+
+        return Page();
+    }
+
     public async Task<IActionResult> OnPostExportCsvAsync(string? position = null)
     {
         var userEmail = HttpContext.Session.GetString("UserEmail");
@@ -136,6 +204,7 @@ public class WaiverWireModel : AppPageModel
     private async Task FetchWaiverWireDataAsync(int userId)
     {
         using var httpClient = new HttpClient();
+        httpClient.Timeout = TimeSpan.FromSeconds(30);
         
         // Get ESPN auth data from database
         var espnAuth = await GetEspnAuthAsync(userId);
@@ -170,6 +239,7 @@ public class WaiverWireModel : AppPageModel
     private async Task FetchWaiverWireDataDirectAsync(int userId)
     {
         using var httpClient = new HttpClient();
+        httpClient.Timeout = TimeSpan.FromSeconds(30);
         
         // Get ESPN auth data from database
         var espnAuth = await GetEspnAuthAsync(userId);
@@ -483,6 +553,118 @@ public class WaiverWireModel : AppPageModel
         {
             await _logger.LogAsync($"Error getting league data for user {userId}: {ex.Message}", "Error");
             return null;
+        }
+    }
+
+    private async Task<string> GetGeminiRecommendationsAsync(List<WaiverWirePlayer> players, string? position)
+    {
+        try
+        {
+            using var httpClient = new HttpClient();
+            httpClient.Timeout = TimeSpan.FromSeconds(30); // Set reasonable timeout
+            
+            // Get the API key from environment variables
+            var apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                await _logger.LogAsync("GEMINI_API_KEY not found in environment variables", "Error");
+                return "AI recommendations are currently unavailable. Please contact support if this continues.";
+            }
+
+            // Prepare the data for AI analysis
+            var playerData = players.Take(10) // Limit to top 10 to keep the prompt manageable
+                .Select(p => $"- {p.FullName} ({p.Position}, {p.ProTeam}): {p.ProjectedPoints} proj pts, {p.FantasyPoints} season pts, {p.OwnershipPercentage}% owned")
+                .ToList();
+
+            var positionFilter = !string.IsNullOrEmpty(position) ? $" at {position}" : "";
+            var prompt = $@"You are a fantasy football expert. Based on the following waiver wire players{positionFilter}, provide 3-4 concise recommendations for who to target and why:
+
+{string.Join("\n", playerData)}
+
+Focus on:
+- Players with high upside potential
+- Recent trends and opportunities (injuries, role changes)
+- Value picks (low ownership but good projection)
+- Position scarcity considerations
+
+Keep each recommendation to 2-3 sentences maximum.";
+
+            // Prepare the request to Gemini API
+            var requestBody = new
+            {
+                contents = new[]
+                {
+                    new
+                    {
+                        parts = new[]
+                        {
+                            new { text = prompt }
+                        }
+                    }
+                }
+            };
+
+            var jsonContent = JsonSerializer.Serialize(requestBody);
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+            // Make the API call to Gemini
+            var response = await httpClient.PostAsync(
+                $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={apiKey}",
+                content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                await _logger.LogAsync($"Gemini API error: {response.StatusCode}", "Error");
+                
+                return response.StatusCode switch
+                {
+                    System.Net.HttpStatusCode.Unauthorized => "AI service authentication failed. Please contact support.",
+                    System.Net.HttpStatusCode.TooManyRequests => "AI service is currently busy. Please try again in a few moments.",
+                    System.Net.HttpStatusCode.BadRequest => "AI service cannot process the request. Please try again later.",
+                    _ => "AI recommendations are temporarily unavailable. Please try again later."
+                };
+            }
+
+            var responseJson = await response.Content.ReadAsStringAsync();
+            
+            if (string.IsNullOrWhiteSpace(responseJson))
+            {
+                await _logger.LogAsync("Gemini API returned empty response", "Warning");
+                return "No AI recommendations available at this time.";
+            }
+
+            using var doc = JsonDocument.Parse(responseJson);
+
+            // Safely extract the generated text from the response
+            if (doc.RootElement.TryGetProperty("candidates", out var candidates) && 
+                candidates.GetArrayLength() > 0)
+            {
+                var firstCandidate = candidates[0];
+                if (firstCandidate.TryGetProperty("content", out var contentProp) &&
+                    contentProp.TryGetProperty("parts", out var parts) &&
+                    parts.GetArrayLength() > 0)
+                {
+                    var firstPart = parts[0];
+                    if (firstPart.TryGetProperty("text", out var textProp))
+                    {
+                        var recommendation = textProp.GetString();
+                        if (!string.IsNullOrWhiteSpace(recommendation))
+                        {
+                            await _logger.LogAsync($"AI recommendations generated successfully for {players.Count} players", "Info");
+                            return recommendation.Trim();
+                        }
+                    }
+                }
+            }
+
+            await _logger.LogAsync("Gemini API response did not contain expected text content", "Warning");
+            return "AI analysis completed, but no specific recommendations were generated.";
+        }
+        catch (Exception ex)
+        {
+            await _logger.LogAsync($"Error getting Gemini recommendations: {ex.Message}", "Error", ex.ToString());
+            return "Unable to generate AI recommendations at this time. Please try again later.";
         }
     }
 }
