@@ -123,12 +123,9 @@
                                     <div class="col-md-2">
                                         @if (Model.WaiverWirePlayers?.Any() == true)
                                         {
-                                            <form method="post" asp-page-handler="ExportCsv" style="display: inline;" class="w-100">
-                                                <input type="hidden" name="position" value="@Model.SelectedPosition" />
-                                                <button type="submit" class="btn btn-outline-secondary w-100">
-                                                    <i class="bi bi-download"></i> Export CSV
-                                                </button>
-                                            </form>
+                                            <button type="submit" formmethod="post" formaction="?handler=ExportCsv" class="btn btn-outline-secondary w-100">
+                                                <i class="bi bi-download"></i> Export CSV
+                                            </button>
                                         }
                                     </div>
                                 </form>
