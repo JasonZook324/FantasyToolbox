@@ -1,4 +1,4 @@
-modules = ["dotnet-7.0", "web", "nodejs-20"]
+modules = ["dotnet-7.0", "web", "nodejs-20", "postgresql-16", "dotnet-9.0"]
 [agent]
 expertMode = true
 
@@ -32,6 +32,10 @@ outputType = "webview"
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 38951
+externalPort = 3001
 
 [[ports]]
 localPort = 43757

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "gWR0l1qTLx8=",
+  "dgSpecHash": "0D8QDsfAyUE=",
   "success": true,
   "projectFilePath": "/home/runner/workspace/FantasyToolbox.csproj",
   "expectedPackageFiles": [
@@ -23,6 +23,7 @@
     "/home/runner/.nuget/packages/microsoft.entityframeworkcore.analyzers/9.0.9/microsoft.entityframeworkcore.analyzers.9.0.9.nupkg.sha512",
     "/home/runner/.nuget/packages/microsoft.entityframeworkcore.design/9.0.9/microsoft.entityframeworkcore.design.9.0.9.nupkg.sha512",
     "/home/runner/.nuget/packages/microsoft.entityframeworkcore.relational/9.0.9/microsoft.entityframeworkcore.relational.9.0.9.nupkg.sha512",
+    "/home/runner/.nuget/packages/microsoft.entityframeworkcore.tools/9.0.9/microsoft.entityframeworkcore.tools.9.0.9.nupkg.sha512",
     "/home/runner/.nuget/packages/microsoft.extensions.caching.abstractions/9.0.9/microsoft.extensions.caching.abstractions.9.0.9.nupkg.sha512",
     "/home/runner/.nuget/packages/microsoft.extensions.caching.memory/9.0.9/microsoft.extensions.caching.memory.9.0.9.nupkg.sha512",
     "/home/runner/.nuget/packages/microsoft.extensions.configuration.abstractions/9.0.9/microsoft.extensions.configuration.abstractions.9.0.9.nupkg.sha512",
