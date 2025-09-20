@@ -132,6 +132,16 @@
                             </div>
                         </div>
 
+                        @if (Model.WaiverWirePlayers?.Any() == true && Model.AllRosterPlayers?.Any() == true)
+                        {
+                            <div class="mb-4">
+                                <button id="getAiRecommendationsBtn" class="btn btn-success">
+                                    <i class="bi bi-robot"></i> Get AI Waiver Wire Recommendations
+                                </button>
+                                <small class="text-muted ms-2">Get personalized pickup suggestions based on your roster</small>
+                            </div>
+                        }
+
                         @if (Model.WaiverWirePlayers?.Any() == true)
                         {
                             <div class="table-responsive">
@@ -204,3 +214,135 @@
         </div>
     </div>
 </div>
+
+<!-- AI Recommendations Modal -->
+<div class="modal fade" id="aiRecommendationsModal" tabindex="-1" aria-labelledby="aiRecommendationsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="aiRecommendationsModalLabel">
+                    <i class="bi bi-robot"></i> AI Waiver Wire Recommendations
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="aiRecommendationsContent">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Analyzing...</span>
+                        </div>
+                        <p class="mt-2">AI is analyzing your roster and available waiver wire players...</p>
+                        <small class="text-muted">This may take a few seconds</small>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const aiButton = document.getElementById('getAiRecommendationsBtn');
+    
+    if (aiButton) {
+        aiButton.addEventListener('click', function() {
+            // Get current waiver wire and roster data
+            const waiverPlayers = @Html.Raw(Json.Serialize(Model.WaiverWirePlayers ?? new List<WaiverWireModel.WaiverWirePlayer>()));
+            const roster = @Html.Raw(Json.Serialize(Model.AllRosterPlayers ?? new List<WaiverWireModel.RosterPlayer>()));
+            const positionFilter = '@Model.SelectedPosition';
+            
+            if (!roster || roster.length === 0) {
+                alert('No roster data available. Please make sure you have connected your ESPN account and have a selected team.');
+                return;
+            }
+            
+            if (!waiverPlayers || waiverPlayers.length === 0) {
+                alert('No waiver wire players available. Please try refreshing the data.');
+                return;
+            }
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('aiRecommendationsModal'));
+            modal.show();
+            
+            // Reset content to loading state
+            document.getElementById('aiRecommendationsContent').innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Analyzing...</span>
+                    </div>
+                    <p class="mt-2">AI is analyzing your roster and available waiver wire players...</p>
+                    <small class="text-muted">This may take a few seconds</small>
+                </div>
+            `;
+            
+            // Make API call
+            const requestData = {
+                roster: roster,
+                waiverPlayers: waiverPlayers,
+                positionFilter: positionFilter || null
+            };
+            
+            fetch('/api/recommendations/waiver-wire', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(error => Promise.reject(error));
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.recommendations) {
+                    // Format the recommendations with proper line breaks
+                    const formattedRecommendations = data.recommendations.replace(/\n/g, '<br>');
+                    
+                    document.getElementById('aiRecommendationsContent').innerHTML = `
+                        <div class="alert alert-info">
+                            <strong>Personalized Recommendations</strong>
+                            ${data.positionFilter ? ` (Filtered to ${data.positionFilter} position)` : ''}
+                            <br>
+                            <small>Based on ${data.rosterCount} roster players and ${data.waiverPlayersCount} available players</small>
+                        </div>
+                        <div class="recommendations-text" style="white-space: pre-line; line-height: 1.6;">
+                            ${data.recommendations}
+                        </div>
+                        <hr>
+                        <small class="text-muted">
+                            Generated on ${new Date(data.generatedAt).toLocaleString()}
+                        </small>
+                    `;
+                } else {
+                    document.getElementById('aiRecommendationsContent').innerHTML = `
+                        <div class="alert alert-warning">
+                            <strong>No Recommendations Available</strong><br>
+                            Unable to generate recommendations at this time. Please try again later.
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                let errorMessage = 'Failed to get AI recommendations. Please try again later.';
+                
+                if (error.error) {
+                    errorMessage = error.error;
+                }
+                
+                document.getElementById('aiRecommendationsContent').innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>Error:</strong> ${errorMessage}
+                    </div>
+                `;
+            });
+        });
+    }
+});
+</script>
