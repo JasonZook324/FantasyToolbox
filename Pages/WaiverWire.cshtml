@@ -427,7 +427,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     topN: 10
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(error => Promise.reject(error));
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.analysis) {
                     document.getElementById('analysisContent').innerHTML = `
@@ -454,9 +459,19 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Error:', error);
+                let errorMessage = 'Failed to load contextual waiver analysis. Please try again.';
+                
+                if (error.message && error.message.includes('usage limit')) {
+                    errorMessage = error.message + ' Please wait a minute and try again, or use the regular waiver wire recommendations.';
+                } else if (error.error && error.error.includes('temporarily unavailable')) {
+                    errorMessage = error.message || 'AI analysis is temporarily unavailable due to usage limits. Please wait a minute and try again.';
+                }
+                
                 document.getElementById('analysisContent').innerHTML = `
-                    <div class="alert alert-danger">
-                        <strong>Error:</strong> Failed to load contextual waiver analysis. Please try again.
+                    <div class="alert alert-warning">
+                        <strong>AI Analysis Temporarily Unavailable:</strong><br>
+                        ${errorMessage}<br><br>
+                        <strong>Alternative:</strong> You can still use the "Update Analysis" button above to get waiver wire recommendations without AI analysis.
                     </div>
                 `;
             });
