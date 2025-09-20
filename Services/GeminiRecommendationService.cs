@@ -62,10 +62,28 @@ public class GeminiRecommendationService
             }
 
             var responseContent = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation("Gemini API response length: {Length} characters", responseContent.Length);
+            
             var geminiResponse = JsonSerializer.Deserialize<GeminiResponse>(responseContent);
             
-            return geminiResponse?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text 
-                   ?? "Unable to generate recommendations at this time.";
+            _logger.LogInformation("Parsed response - Candidates count: {Count}", 
+                geminiResponse?.Candidates?.Length ?? 0);
+            
+            var firstCandidate = geminiResponse?.Candidates?.FirstOrDefault();
+            var candidateContent = firstCandidate?.Content;
+            var parts = candidateContent?.Parts;
+            var text = parts?.FirstOrDefault()?.Text;
+            
+            _logger.LogInformation("Response parsing - Has candidate: {HasCandidate}, Has content: {HasContent}, Has parts: {HasParts}, Text length: {TextLength}", 
+                firstCandidate != null, candidateContent != null, parts != null, text?.Length ?? 0);
+            
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                _logger.LogWarning("Gemini returned empty text. Full response: {Response}", responseContent);
+                return "Unable to generate recommendations at this time.";
+            }
+            
+            return text;
         }
         catch (Exception ex)
         {
