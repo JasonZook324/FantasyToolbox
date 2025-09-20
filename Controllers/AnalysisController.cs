@@ -168,6 +168,15 @@ namespace FantasyToolbox.Controllers
                     request.TopN ?? 10
                 );
 
+                if (string.IsNullOrEmpty(analysis))
+                {
+                    return StatusCode(429, new { 
+                        error = "AI contextual analysis temporarily unavailable", 
+                        message = "The AI analysis service has reached its usage limit. Please wait about a minute and try again, or check the regular waiver wire recommendations instead.",
+                        suggestedRetryTime = 60 // seconds
+                    });
+                }
+
                 return Ok(new ContextualWaiverAnalysisResponse
                 {
                     SelectedPlayerName = GetPlayerName(selectedPlayerData),
