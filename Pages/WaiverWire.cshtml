@@ -295,8 +295,43 @@ document.addEventListener('DOMContentLoaded', function() {
             const playerId = this.getAttribute('data-player-id');
             const playerName = this.getAttribute('data-player-name');
             
-            // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('analysisModal'));
+            // Show modal - handle Bootstrap not loaded case
+            const modalElement = document.getElementById('analysisModal');
+            let modal;
+            
+            try {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    modal = new bootstrap.Modal(modalElement);
+                } else {
+                    throw new Error('Bootstrap not available');
+                }
+            } catch (e) {
+                console.log('Using manual modal fallback for individual player analysis');
+                modal = {
+                    show: () => {
+                        modalElement.style.display = 'block';
+                        modalElement.classList.add('show');
+                        modalElement.setAttribute('aria-hidden', 'false');
+                        document.body.classList.add('modal-open');
+                        
+                        if (!document.getElementById('customModalBackdrop')) {
+                            const backdrop = document.createElement('div');
+                            backdrop.className = 'modal-backdrop fade show';
+                            backdrop.id = 'customModalBackdrop';
+                            document.body.appendChild(backdrop);
+                            backdrop.onclick = () => modal.hide();
+                        }
+                    },
+                    hide: () => {
+                        modalElement.style.display = 'none';
+                        modalElement.classList.remove('show');
+                        modalElement.setAttribute('aria-hidden', 'true');
+                        document.body.classList.remove('modal-open');
+                        const backdrop = document.getElementById('customModalBackdrop');
+                        if (backdrop) backdrop.remove();
+                    }
+                };
+            }
             document.getElementById('analysisPlayerName').textContent = playerName;
             document.getElementById('analysisContent').innerHTML = `
                 <div class="text-center">
@@ -382,25 +417,45 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Show modal for bulk analysis - handle Bootstrap not loaded case
+            // Show modal for bulk analysis - wait for Bootstrap or use fallback
             const modalElement = document.getElementById('analysisModal');
             let modal;
             
-            if (typeof bootstrap !== 'undefined') {
-                modal = new bootstrap.Modal(modalElement);
-            } else {
+            // Try to use Bootstrap, with fallback if not available
+            try {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    modal = new bootstrap.Modal(modalElement);
+                } else {
+                    throw new Error('Bootstrap not available');
+                }
+            } catch (e) {
+                console.log('Using manual modal fallback (Bootstrap not loaded)');
                 // Fallback: manually show modal if Bootstrap isn't loaded
-                modalElement.style.display = 'block';
-                modalElement.classList.add('show');
-                document.body.style.overflow = 'hidden';
-                
-                // Create a simple close function
                 modal = {
-                    show: () => {},
+                    show: () => {
+                        modalElement.style.display = 'block';
+                        modalElement.classList.add('show');
+                        modalElement.setAttribute('aria-hidden', 'false');
+                        document.body.classList.add('modal-open');
+                        
+                        // Create backdrop
+                        if (!document.getElementById('customModalBackdrop')) {
+                            const backdrop = document.createElement('div');
+                            backdrop.className = 'modal-backdrop fade show';
+                            backdrop.id = 'customModalBackdrop';
+                            document.body.appendChild(backdrop);
+                            
+                            // Close on backdrop click
+                            backdrop.onclick = () => modal.hide();
+                        }
+                    },
                     hide: () => {
                         modalElement.style.display = 'none';
                         modalElement.classList.remove('show');
-                        document.body.style.overflow = '';
+                        modalElement.setAttribute('aria-hidden', 'true');
+                        document.body.classList.remove('modal-open');
+                        const backdrop = document.getElementById('customModalBackdrop');
+                        if (backdrop) backdrop.remove();
                     }
                 };
             }
@@ -477,5 +532,21 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+    
+    // Handle modal close button for both Bootstrap and fallback
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('btn-close') || e.target.getAttribute('data-bs-dismiss') === 'modal') {
+            const modalElement = document.getElementById('analysisModal');
+            if (modalElement.style.display === 'block' || modalElement.classList.contains('show')) {
+                // Manual fallback close
+                modalElement.style.display = 'none';
+                modalElement.classList.remove('show');
+                modalElement.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('modal-open');
+                const backdrop = document.getElementById('customModalBackdrop');
+                if (backdrop) backdrop.remove();
+            }
+        }
+    });
 });
 </script>
