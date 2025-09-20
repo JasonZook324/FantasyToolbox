@@ -1,5 +1,5 @@
-using System.Text.Json;
 using System.Text;
+using System.Text.Json;
 
 namespace FantasyToolbox.Services
 {
@@ -81,7 +81,7 @@ namespace FantasyToolbox.Services
                             category = "HARM_CATEGORY_DANGEROUS_CONTENT",
                             threshold = "BLOCK_MEDIUM_AND_ABOVE"
                         }
-                    ]
+                    }
                 };
 
                 var json = JsonSerializer.Serialize(requestBody);
@@ -122,12 +122,12 @@ Player Data:
 {playerJson}
 
 Please provide a concise analysis (3-4 sentences) covering:
-1. Current performance trends and key stats
-2. Upcoming matchup outlook  
-3. Fantasy relevance and roster decision guidance
-4. Any injury concerns or red flags
+1. Recent performance trends and key statistics
+2. Strengths and weaknesses based on the data
+3. Overall fantasy value assessment
+4. Any relevant injury or team situation context
 
-Focus on actionable fantasy advice for the upcoming week.";
+Keep the analysis practical and actionable for fantasy football decisions.";
         }
 
         private string GenerateWaiverPickupPrompt(string playerJson)
@@ -137,13 +137,13 @@ Focus on actionable fantasy advice for the upcoming week.";
 Player Data:
 {playerJson}
 
-Provide a brief waiver priority assessment (2-3 sentences) covering:
-1. Why this player is worth considering for pickup
-2. Expected role and opportunity moving forward
-3. Recommended FAAB percentage or waiver priority level
-4. Best roster situations where this pickup makes sense
+Please provide a targeted waiver pickup analysis (3-4 sentences) covering:
+1. Why this player should or shouldn't be picked up from waivers
+2. Realistic expectations for future performance
+3. What percentage of FAAB budget or waiver priority this player is worth
+4. Best case and worst case scenarios for adding this player
 
-Be specific about their upside and realistic expectations.";
+Focus on actionable advice for whether to use a waiver claim on this player.";
         }
 
         private string GenerateStartSitPrompt(string playerJson)
@@ -153,13 +153,13 @@ Be specific about their upside and realistic expectations.";
 Player Data:
 {playerJson}
 
-Give a clear recommendation (2-3 sentences) covering:
-1. Start or Sit recommendation with confidence level
-2. Key matchup factors influencing the decision
-3. Floor vs ceiling expectations for this week
-4. Alternative options to consider if available
+Please provide start/sit guidance (3-4 sentences) covering:
+1. Is this player a must-start, situational play, or bench player this week?
+2. Key matchup factors and game script considerations
+3. Floor and ceiling expectations for this game
+4. Alternative players at the same position to consider instead
 
-Focus on this week's specific outlook and decision factors.";
+Give a clear START or SIT recommendation with confidence level (high/medium/low).";
         }
 
         private string GenerateTradeValuePrompt(string playerJson)
@@ -169,16 +169,17 @@ Focus on this week's specific outlook and decision factors.";
 Player Data:
 {playerJson}
 
-Provide a trade value analysis (3-4 sentences) covering:
-1. Current trade market value and tier ranking
-2. Buy-low or sell-high opportunity assessment  
-3. Realistic trade targets of similar value
-4. ROS outlook impact on value trajectory
+Please provide a trade value analysis (3-4 sentences) covering:
+1. Current market value - is this player buy-low, sell-high, or fairly valued?
+2. ROS (rest of season) outlook and potential for improvement/decline
+3. What tier of players this player could realistically be traded for
+4. Timing considerations - best time to trade this player
 
-Focus on actionable trade guidance and market positioning.";
+Focus on practical trade advice and realistic player comparisons for trade targets.";
         }
     }
 
+    // Response models for Gemini API
     public class GeminiResponse
     {
         public GeminiCandidate[]? candidates { get; set; }

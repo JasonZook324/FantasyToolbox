@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using FantasyToolbox.Services;
-using FantasyToolbox.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
 namespace FantasyToolbox.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class AnalysisController : ControllerBase
@@ -26,11 +27,23 @@ namespace FantasyToolbox.Controllers
         {
             try
             {
-                // Get the user context (using first active user for now)
-                var userRecord = await _context.Users.FirstOrDefaultAsync(u => u.IsActive);
+                // Get authenticated user email
+                var userEmail = HttpContext.Session.GetString("UserEmail");
+                if (string.IsNullOrEmpty(userEmail) && User.Identity?.IsAuthenticated == true)
+                {
+                    userEmail = User.Identity.Name;
+                }
+
+                if (string.IsNullOrEmpty(userEmail))
+                {
+                    return Unauthorized(new { error = "User authentication required" });
+                }
+
+                // Get the user record
+                var userRecord = await _context.Users.FirstOrDefaultAsync(u => u.Email == userEmail && u.IsActive);
                 if (userRecord == null)
                 {
-                    return BadRequest("User not found");
+                    return Unauthorized(new { error = "User account not found" });
                 }
 
                 // Get ESPN auth for API calls
@@ -39,19 +52,21 @@ namespace FantasyToolbox.Controllers
 
                 if (espnAuth == null || leagueData == null)
                 {
-                    return BadRequest("ESPN authentication or league data not found");
+                    return BadRequest(new { error = "ESPN authentication or league data not found" });
                 }
 
                 // Fetch player data from ESPN API
                 using var httpClient = new HttpClient();
-                httpClient.DefaultRequestHeaders.Add("Cookie", $"SWID={espnAuth.Swid}; espn_s2={espnAuth.EspnS2}");
-
+                
                 var apiUrl = $"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{leagueData.LeagueYear}/segments/0/leagues/{leagueData.LeagueId}";
-                var response = await httpClient.GetAsync($"{apiUrl}?view=kona_player_info");
+                var espnRequest = new HttpRequestMessage(HttpMethod.Get, $"{apiUrl}?view=kona_player_info");
+                espnRequest.Headers.Add("Cookie", $"SWID={espnAuth.Swid}; espn_s2={espnAuth.EspnS2}");
+                
+                var response = await httpClient.SendAsync(espnRequest);
                 
                 if (!response.IsSuccessStatusCode)
                 {
-                    return StatusCode(500, "Failed to fetch player data from ESPN");
+                    return StatusCode(500, new { error = "Failed to fetch player data from ESPN" });
                 }
 
                 var jsonContent = await response.Content.ReadAsStringAsync();
@@ -73,7 +88,7 @@ namespace FantasyToolbox.Controllers
 
                 if (playerData == null)
                 {
-                    return NotFound($"Player with ID {playerId} not found");
+                    return NotFound(new { error = $"Player with ID {playerId} not found" });
                 }
 
                 // Generate AI analysis
@@ -90,8 +105,8 @@ namespace FantasyToolbox.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error analyzing player {PlayerId}", playerId);
-                return StatusCode(500, new { error = $"Failed to analyze player: {ex.Message}" });
+                _logger.LogError(ex, "Error analyzing player {PlayerId} for user {UserEmail}", playerId, HttpContext.Session.GetString("UserEmail"));
+                return StatusCode(500, new { error = "Failed to analyze player. Please try again." });
             }
         }
 
@@ -100,11 +115,23 @@ namespace FantasyToolbox.Controllers
         {
             try
             {
-                // Get the user context
-                var userRecord = await _context.Users.FirstOrDefaultAsync(u => u.IsActive);
+                // Get authenticated user email
+                var userEmail = HttpContext.Session.GetString("UserEmail");
+                if (string.IsNullOrEmpty(userEmail) && User.Identity?.IsAuthenticated == true)
+                {
+                    userEmail = User.Identity.Name;
+                }
+
+                if (string.IsNullOrEmpty(userEmail))
+                {
+                    return Unauthorized(new { error = "User authentication required" });
+                }
+
+                // Get the user record
+                var userRecord = await _context.Users.FirstOrDefaultAsync(u => u.Email == userEmail && u.IsActive);
                 if (userRecord == null)
                 {
-                    return BadRequest("User not found");
+                    return Unauthorized(new { error = "User account not found" });
                 }
 
                 var espnAuth = await _context.EspnAuth.FirstOrDefaultAsync(e => e.UserId == userRecord.UserId);
@@ -112,12 +139,11 @@ namespace FantasyToolbox.Controllers
 
                 if (espnAuth == null || leagueData == null)
                 {
-                    return BadRequest("ESPN authentication or league data not found");
+                    return BadRequest(new { error = "ESPN authentication or league data not found" });
                 }
 
                 // Fetch waiver wire data
                 using var httpClient = new HttpClient();
-                httpClient.DefaultRequestHeaders.Add("Cookie", $"SWID={espnAuth.Swid}; espn_s2={espnAuth.EspnS2}");
 
                 var apiUrl = $"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{leagueData.LeagueYear}/segments/0/leagues/{leagueData.LeagueId}";
                 
@@ -130,7 +156,7 @@ namespace FantasyToolbox.Controllers
                 var waiverResponse = await httpClient.SendAsync(waiverRequest);
                 if (!waiverResponse.IsSuccessStatusCode)
                 {
-                    return StatusCode(500, "Failed to fetch waiver wire data");
+                    return StatusCode(500, new { error = "Failed to fetch waiver wire data" });
                 }
 
                 var waiverContent = await waiverResponse.Content.ReadAsStringAsync();
@@ -184,8 +210,8 @@ namespace FantasyToolbox.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error analyzing waiver wire");
-                return StatusCode(500, new { error = $"Failed to analyze waiver wire: {ex.Message}" });
+                _logger.LogError(ex, "Error analyzing waiver wire for user {UserEmail}", HttpContext.Session.GetString("UserEmail"));
+                return StatusCode(500, new { error = "Failed to analyze waiver wire. Please try again." });
             }
         }
     }
