@@ -4,6 +4,8 @@ using System.Text.Json;
 using System.Text;
 using FantasyToolbox.Models;
 
+namespace FantasyToolbox.Pages;
+
 public class WaiverWireModel : AppPageModel
 {
     private readonly IUserService _userService;
