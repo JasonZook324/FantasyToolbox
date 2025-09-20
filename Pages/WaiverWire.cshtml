@@ -382,8 +382,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Show modal for bulk analysis
-            const modal = new bootstrap.Modal(document.getElementById('analysisModal'));
+            // Show modal for bulk analysis - handle Bootstrap not loaded case
+            const modalElement = document.getElementById('analysisModal');
+            let modal;
+            
+            if (typeof bootstrap !== 'undefined') {
+                modal = new bootstrap.Modal(modalElement);
+            } else {
+                // Fallback: manually show modal if Bootstrap isn't loaded
+                modalElement.style.display = 'block';
+                modalElement.classList.add('show');
+                document.body.style.overflow = 'hidden';
+                
+                // Create a simple close function
+                modal = {
+                    show: () => {},
+                    hide: () => {
+                        modalElement.style.display = 'none';
+                        modalElement.classList.remove('show');
+                        document.body.style.overflow = '';
+                    }
+                };
+            }
             document.getElementById('analysisPlayerName').textContent = 'Contextual Waiver Wire Analysis';
             document.getElementById('analysisContent').innerHTML = `
                 <div class="text-center">
