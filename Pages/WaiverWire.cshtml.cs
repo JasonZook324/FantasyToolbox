@@ -573,34 +573,67 @@ public class WaiverWireModel : AppPageModel
                 return "AI recommendations are currently unavailable. Please contact support if this continues.";
             }
 
+            // Calculate current NFL week and date
+            var currentDate = DateTime.Now;
+            var currentWeek = CalculateNFLWeek(currentDate);
+            var formattedDate = currentDate.ToString("MMMM d, yyyy");
+            
             // Prepare the data for AI analysis
             var playerData = players.Take(10) // Limit to top 10 to keep the prompt manageable
                 .Select(p => $"- {p.FullName} ({p.Position}, {p.ProTeam}): {p.ProjectedPoints} proj pts, {p.FantasyPoints} season pts, {p.OwnershipPercentage}% owned")
                 .ToList();
 
-            var positionFilter = !string.IsNullOrEmpty(position) ? $" at {position}" : "";
-            var prompt = $@"You are a fantasy football expert. Based on the following waiver wire players{positionFilter}, provide 3-4 concise recommendations for who to target and why:
+            var positionFilter = !string.IsNullOrEmpty(position) ? $" filtered by {position} position" : "";
+            
+            // Create the specific prompt structure requested
+            var systemMessage = $@"It's Week {currentWeek} of the 2025 NFL regular season (today is {formattedDate}).
 
+You are a fantasy football expert with extensive knowledge of current NFL trends, player performance, and waiver wire strategies. Based on your understanding of fantasy football principles and current season dynamics for Week {currentWeek}:
+
+• Provide your top five waiver wire recommendations in the style of FantasyPros analysis
+• Format each as a concise summary (player name, position, team, estimated roster %, and why they're recommended)  
+• Include relevant injury updates and opportunity changes you're aware of for this timeframe
+
+Present these five recommendations under the heading: ""Expert Week {currentWeek} Top 5 Waiver Picks.""";
+
+            var userMessage = $@"I need fantasy football waiver wire advice for my 14-team PPR (Point Per Reception) league.
+
+My current available waiver wire players{positionFilter}:
 {string.Join("\n", playerData)}
 
-Focus on:
-- Players with high upside potential
-- Recent trends and opportunities (injuries, role changes)
-- Value picks (low ownership but good projection)
-- Position scarcity considerations
+Your task is to:
 
-Keep each recommendation to 2-3 sentences maximum.";
+Analyze the waiver wire options and identify the best targets based on matchup quality, projected points, expert sentiment, and injury status.
 
-            // Prepare the request to Gemini API
+Evaluate each player's upside potential, role security, and schedule strength for the upcoming weeks.
+
+Use your Expert Week {currentWeek} Top 5 Waiver Picks analysis to support your recommendations.
+
+Recommend the top five waiver wire moves I should consider, with a breakdown of each option.
+
+Include streaming suggestions for QB, D/ST, and TE if relevant players are available in the waiver options.
+
+Format your response with clear headings, bullet points, and concise reasoning for each recommendation.";
+
+            // Prepare the request to Gemini API with system instruction and user message
             var requestBody = new
             {
+                system_instruction = new
+                {
+                    role = "system",
+                    parts = new[]
+                    {
+                        new { text = systemMessage }
+                    }
+                },
                 contents = new[]
                 {
                     new
                     {
+                        role = "user",
                         parts = new[]
                         {
-                            new { text = prompt }
+                            new { text = userMessage }
                         }
                     }
                 }
@@ -668,5 +701,30 @@ Keep each recommendation to 2-3 sentences maximum.";
             await _logger.LogAsync($"Error getting Gemini recommendations: {ex.Message}", "Error", ex.ToString());
             return "Unable to generate AI recommendations at this time. Please try again later.";
         }
+    }
+
+    private int CalculateNFLWeek(DateTime currentDate)
+    {
+        // NFL 2025 season Week 1 starts September 4, 2025 (Thursday Night Football)
+        // Week transitions occur on Tuesday at 3 AM ET (waiver period)
+        var seasonStart = new DateTime(2025, 9, 2); // Tuesday before Week 1 games
+        
+        // If before season start, default to Week 1 preparation
+        if (currentDate < seasonStart)
+        {
+            return 1;
+        }
+
+        // Calculate weeks since season start (Tuesday to Tuesday cycle)
+        var daysSinceStart = (currentDate - seasonStart).Days;
+        var week = (daysSinceStart / 7) + 1;
+        
+        // Regular season is weeks 1-18, then playoffs
+        if (week > 18)
+        {
+            return 18; // Cap at Week 18 for regular season
+        }
+        
+        return Math.Max(week, 1);
     }
 }
